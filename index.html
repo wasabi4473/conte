@@ -91,8 +91,10 @@
   .cut-card.editing { border-color: var(--accent); }
   .cut-card-header { display: flex; align-items: center; gap: 8px; padding: 9px 10px; cursor: pointer; user-select: none; }
   .cut-num { font-family: var(--mono); font-size: 11px; font-weight: 700; color: var(--accent); background: var(--accent-dim); padding: 2px 6px; border-radius: 4px; flex-shrink: 0; }
-  /* サムネイル修正: 正方形＆contain */
-  .cut-thumb { width: 36px; height: 36px; border-radius: 4px; object-fit: contain; flex-shrink: 0; border: 1px solid var(--border); background: #fff; }
+  
+  /* サムネイル修正: 余白を消して画像本来の形に合わせる */
+  .cut-thumb { max-width: 40px; max-height: 40px; width: auto; height: auto; border-radius: 4px; object-fit: contain; flex-shrink: 0; border: 1px solid var(--border); background: #fff; }
+  
   .cut-summary { flex: 1; min-width: 0; }
   .cut-title-preview { font-size: 12px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .cut-chips { display: flex; gap: 3px; margin-top: 2px; overflow: hidden; }
@@ -128,7 +130,10 @@
   .img-area-buttons input[type=file] { display: none; }
   .img-preview-wrap { margin-top: 10px; position: relative; display: none; }
   .img-preview-wrap.show { display: block; }
-  .img-preview { width: 100%; max-height: 200px; object-fit: contain; border-radius: 6px; background: #fff; border: 1px solid var(--border-light); display: block; }
+  
+  /* モーダル内プレビュー修正: 余白なしで端まで表示 */
+  .img-preview { width: auto; height: auto; max-width: 100%; max-height: 200px; object-fit: contain; border-radius: 6px; background: #fff; border: 1px solid var(--border-light); display: block; margin: 0 auto; }
+  
   .img-preview-actions { display: flex; gap: 6px; margin-top: 6px; }
   .img-preview-actions button { flex: 1; font-size: 11px; padding: 6px; border-radius: 6px; border: 1px solid var(--border); background: transparent; color: var(--text-mid); cursor: pointer; font-family: var(--jp); }
   .img-preview-actions button.danger-txt { color: var(--red); }
@@ -143,7 +148,6 @@
   .draw-overlay.open { display: flex; }
   .draw-toolbar { display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: var(--surface); border-bottom: 1px solid var(--border); flex-wrap: wrap; }
   .draw-canvas-wrap { flex: 1; position: relative; background: #f0f0f0; overflow: hidden; touch-action: none; display: flex; align-items: center; justify-content: center; }
-  /* アスペクト比はJSで動的に変更するため削除 */
   #drawCanvas { touch-action: none; background: #fff; max-width: 100%; max-height: 100%; box-shadow: 0 0 10px rgba(0,0,0,0.5); object-fit: contain; }
   
   .color-swatch { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--border-light); cursor: pointer; flex-shrink: 0; }
@@ -167,8 +171,10 @@
   .preview-cut-title { font-family: var(--mono); font-size: 11px; font-weight: 700; color: var(--accent); margin-bottom: 8px; }
   .preview-cut-body { display: grid; grid-template-columns: 100px 1fr; gap: 10px; align-items: start; }
   .preview-cut-body.no-img { grid-template-columns: 1fr; }
-  /* サムネイル修正: 正方形＆contain */
-  .preview-cut-thumb { width: 100px; height: 100px; object-fit: contain; border-radius: 5px; border: 1px solid var(--border); background: #fff; }
+  
+  /* プレビュータブサムネイル修正: 枠を画像サイズに追従させる */
+  .preview-cut-thumb { max-width: 100px; max-height: 100px; width: auto; height: auto; object-fit: contain; border-radius: 5px; border: 1px solid var(--border); background: #fff; }
+  
   .preview-row { display: grid; grid-template-columns: 64px 1fr; gap: 6px; margin-bottom: 4px; font-size: 11px; align-items: start; }
   .preview-key { color: var(--text-dim); font-family: var(--mono); font-size: 10px; padding-top: 2px; }
   .preview-val { color: var(--text); white-space: pre-wrap; word-break: break-word; }
@@ -399,6 +405,7 @@
 <div class="toast" id="toast"></div>
 
 <script>
+// ===== STATE =====
 const STORAGE_KEY = 'conte_v4';
 let projects = [];
 let currentProjectId = null;
@@ -410,6 +417,7 @@ let selectedCams = new Set();
 let selectedAngle = '';
 let currentImageData = null;
 
+// ===== PERSISTENCE =====
 function saveProjects() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(projects)); } catch(e) {} }
 function loadProjects() {
   try {
@@ -646,7 +654,6 @@ let drawSize = 5;
 let drawing = false;
 let eraserOn = false;
 let drawHistory = [];
-// 追加: 縦型かどうかのフラグ
 let drawAspectVertical = false;
 
 function openDrawModal() {
@@ -654,14 +661,17 @@ function openDrawModal() {
   if (currentImageData) {
     const img = new Image();
     img.onload = () => {
-      // 既存画像が縦長なら自動的に縦型モードにする
       drawAspectVertical = img.height > img.width;
       initDrawCanvas(img);
     };
     img.src = currentImageData;
   } else {
-    // 新規お絵かき時、カテゴリが「縦型ショート」ならデフォルト縦にする
-    drawAspectVertical = (selectedType === '縦型ショート');
+    // 確実に「縦型ショート」の時だけ縦にする
+    if (selectedType === '縦型ショート') {
+      drawAspectVertical = true;
+    } else {
+      drawAspectVertical = false;
+    }
     initDrawCanvas();
   }
 }
@@ -670,21 +680,18 @@ function closeDrawModal() {
   document.getElementById('drawOverlay').classList.remove('open');
 }
 
-// キャンバス縦横切り替え処理
 function toggleCanvasAspect() {
   drawAspectVertical = !drawAspectVertical;
   const tempImg = new Image();
   tempImg.onload = () => {
     initDrawCanvas(tempImg);
   };
-  // 現在描いている絵を一時保存して新しいキャンバスに引き継ぐ
   tempImg.src = drawHistory[drawHistory.length - 1] || drawCanvas.toDataURL();
 }
 
 function initDrawCanvas(loadedImg = null) {
   drawCanvas = document.getElementById('drawCanvas');
   
-  // 縦横のサイズ設定
   const cw = drawAspectVertical ? 1080 : 1920;
   const ch = drawAspectVertical ? 1920 : 1080;
   
@@ -710,7 +717,6 @@ function initDrawCanvas(loadedImg = null) {
   drawCtx.lineJoin = 'round';
   drawCtx.lineCap = 'round';
 
-  // イベントリスナーをプロパティで上書きして二重登録を防ぐ
   drawCanvas.onpointerdown = startDraw;
   drawCanvas.onpointermove = moveDraw;
   drawCanvas.onpointerup = endDraw;
@@ -905,8 +911,7 @@ function exportDoc() {
   function cutBlock(cut,ci){
     const cam=[...(cut.cams||[]),cut.angle,cut.cameraNote].filter(Boolean).join(' / ');
     const rows=[cut.timecode?`<tr><td class="key">TIMECODE</td><td>${esc(cut.timecode)}</td></tr>`:'',cam?`<tr><td class="key">CAMERA</td><td>${esc(cam)}</td></tr>`:'',cut.dialogue?`<tr><td class="key">DIALOGUE</td><td style="white-space:pre-wrap">${esc(cut.dialogue)}</td></tr>`:'',cut.action?`<tr><td class="key">ACTION</td><td style="white-space:pre-wrap">${esc(cut.action)}</td></tr>`:'',cut.note?`<tr><td class="key">NOTE</td><td>${esc(cut.note)}</td></tr>`:''].join('');
-    // PDF時の画像も正方形枠でcontainに修正
-    return `<div class="cut-block"><div style="display:grid;grid-template-columns:${cut.image?'120px 1fr':'1fr'};gap:10px;align-items:start">${cut.image?`<img style="width:120px;height:120px;object-fit:contain;border-radius:5px;background:#f5f5f5;border:1px solid #ddd" src="${cut.image}" alt="">`:''}
+    return `<div class="cut-block"><div style="display:grid;grid-template-columns:${cut.image?'120px 1fr':'1fr'};gap:10px;align-items:start">${cut.image?`<img style="max-width:120px;max-height:120px;width:auto;height:auto;object-fit:contain;border-radius:5px;background:#f5f5f5;border:1px solid #ddd;display:block;" src="${cut.image}" alt="">`:''}
       <div><div class="cut-head">C${String(ci+1).padStart(2,'0')}　${esc(cut.title)}</div>${rows?`<table>${rows}</table>`:''}</div></div></div>`;
   }
 
