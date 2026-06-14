@@ -2,8 +2,11 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
 <title>コンテ帳</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1e1e1e">
+<link rel="apple-touch-icon" href="icon.png">
 <style>
   :root {
     --bg: #141414; --surface: #1e1e1e; --card: #252525; --card-hover: #2c2c2c;
@@ -91,7 +94,12 @@
   .cut-card.editing { border-color: var(--accent); }
   .cut-card-header { display: flex; align-items: center; gap: 8px; padding: 9px 10px; cursor: pointer; user-select: none; }
   .cut-num { font-family: var(--mono); font-size: 11px; font-weight: 700; color: var(--accent); background: var(--accent-dim); padding: 2px 6px; border-radius: 4px; flex-shrink: 0; }
-  .cut-thumb { max-width: 40px; max-height: 40px; width: auto; height: auto; border-radius: 4px; object-fit: contain; flex-shrink: 0; border: 1px solid var(--border); background: #fff; }
+  
+  /* サムネイルと尺の表示枠 */
+  .cut-thumb-wrap { position: relative; width: 80px; height: 50px; flex-shrink: 0; background: #fff; border: 1px solid var(--border); border-radius: 4px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+  .cut-thumb-wrap img { width: 100%; height: 100%; object-fit: contain; }
+  .cut-time-overlay { position: absolute; bottom: 1px; right: 1px; background: rgba(0,0,0,0.7); color: #fff; font-size: 8px; padding: 1px 3px; border-radius: 2px; font-family: var(--mono); transform: scale(0.9); transform-origin: bottom right; white-space: nowrap; }
+
   .cut-summary { flex: 1; min-width: 0; }
   .cut-title-preview { font-size: 12px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .cut-chips { display: flex; gap: 3px; margin-top: 2px; overflow: hidden; }
@@ -109,6 +117,9 @@
   .modal { background: var(--surface); border: 1px solid var(--border); border-bottom: none; border-radius: 16px 16px 0 0; width: 100%; max-width: 600px; padding: 20px 16px 40px; max-height: 90vh; overflow-y: auto; }
   .modal-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 16px; }
   .modal-title { font-size: 15px; font-weight: 700; color: var(--accent); margin-bottom: 16px; font-family: var(--mono); }
+  
+  .edit-section-title { font-size: 12px; font-weight: bold; border-bottom: 1px solid var(--border); padding-bottom: 4px; margin: 20px 0 10px; }
+  
   .edit-field { margin-top: 12px; }
   .edit-label { font-size: 10px; color: var(--text-dim); font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px; display: flex; align-items: center; gap: 6px; }
   .edit-label span { font-size: 14px; }
@@ -119,6 +130,7 @@
   .cam-chip { padding: 7px 8px; border-radius: 7px; font-size: 11px; border: 1px solid var(--border); color: var(--text-mid); background: transparent; cursor: pointer; font-family: var(--jp); text-align: center; transition: all 0.12s; line-height: 1.3; }
   .cam-chip.selected { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
 
+  /* image area */
   .img-area-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   .img-choice-btn { background: var(--bg); border: 1px solid var(--border-light); border-radius: 8px; padding: 14px 8px; text-align: center; cursor: pointer; color: var(--text-mid); font-size: 12px; font-family: var(--jp); transition: all 0.12s; }
   .img-choice-btn:hover { border-color: var(--accent); color: var(--accent); }
@@ -136,6 +148,7 @@
   .btn-primary:hover { opacity: 0.85; }
   .btn-secondary { flex: 1; background: transparent; color: var(--text-mid); border: 1px solid var(--border); border-radius: 10px; padding: 12px; font-size: 14px; cursor: pointer; font-family: var(--jp); }
 
+  /* ===== DRAW MODAL ===== */
   .draw-overlay { display: none; position: fixed; inset: 0; background: #000; z-index: 500; flex-direction: column; }
   .draw-overlay.open { display: flex; }
   .draw-toolbar { display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: var(--surface); border-bottom: 1px solid var(--border); flex-wrap: wrap; }
@@ -151,22 +164,28 @@
   .draw-bottom { display: flex; gap: 8px; padding: 10px 12px; background: var(--surface); border-top: 1px solid var(--border); }
   .draw-bottom button { flex: 1; }
 
-  .preview-doc { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 20px 16px; font-size: 13px; line-height: 1.8; }
+  /* ===== PREVIEW TABLE ===== */
+  .preview-doc { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 20px 16px; font-size: 13px; line-height: 1.8; overflow-x: auto; }
   .preview-title { font-size: 20px; font-weight: 700; color: var(--accent); margin-bottom: 4px; font-family: var(--mono); }
   .preview-meta { font-size: 11px; color: var(--text-dim); font-family: var(--mono); margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
   .preview-info-block { margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
   .preview-info-row { display: flex; gap: 8px; margin-bottom: 6px; font-size: 12px; }
   .preview-info-key { color: var(--text-dim); font-family: var(--mono); min-width: 80px; flex-shrink: 0; }
-  .preview-seq-title { font-family: var(--mono); font-size: 11px; font-weight: 700; color: #8880cc; background: #1a1840; border: 1px solid #3a3080; border-radius: 6px; padding: 5px 10px; margin: 16px 0 8px; display: inline-block; }
-  .preview-cut { margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid var(--border-light); }
-  .preview-cut:last-child { border-bottom: none; margin-bottom: 0; }
-  .preview-cut-title { font-family: var(--mono); font-size: 11px; font-weight: 700; color: var(--accent); margin-bottom: 8px; }
-  .preview-cut-body { display: grid; grid-template-columns: 100px 1fr; gap: 10px; align-items: start; }
-  .preview-cut-body.no-img { grid-template-columns: 1fr; }
-  .preview-cut-thumb { max-width: 100px; max-height: 100px; width: auto; height: auto; object-fit: contain; border-radius: 5px; border: 1px solid var(--border); background: #fff; }
-  .preview-row { display: grid; grid-template-columns: 64px 1fr; gap: 6px; margin-bottom: 4px; font-size: 11px; align-items: start; }
-  .preview-key { color: var(--text-dim); font-family: var(--mono); font-size: 10px; padding-top: 2px; }
-  .preview-val { color: var(--text); white-space: pre-wrap; word-break: break-word; }
+  .preview-seq-title { font-family: var(--mono); font-size: 12px; font-weight: 700; color: #c8c0ff; background: #2a2460; border-radius: 6px; padding: 5px 10px; margin: 16px 0 8px; display: inline-block; }
+  
+  .preview-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 11px; min-width: 600px; }
+  .preview-table th, .preview-table td { border: 1px solid var(--border-light); padding: 8px; vertical-align: top; }
+  .preview-table th { background: var(--surface); color: var(--text-dim); text-align: left; }
+  
+  /* プレビュー内の画像サムネイルも枠付きに */
+  .preview-cut-thumb-wrap { position: relative; width: 100%; max-width: 140px; aspect-ratio: 16/9; margin: 0 auto; background: #fff; border: 1px solid var(--border); border-radius: 4px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+  .preview-cut-thumb-wrap img { width: 100%; height: 100%; object-fit: contain; }
+  
+  .offset-controls { display: flex; gap: 4px; margin-top: 8px; justify-content: flex-start; }
+  .offset-controls.center { justify-content: center; }
+  .btn-offset { background: var(--surface); border: 1px solid var(--border); color: var(--text-mid); border-radius: 4px; padding: 4px 8px; font-size: 10px; cursor: pointer; }
+  .btn-offset:hover { background: var(--border-light); color: var(--text); }
+  .btn-offset:disabled { opacity: 0.3; pointer-events: none; }
 
   .fab { position: fixed; bottom: 24px; right: 20px; z-index: 200; background: var(--accent); color: #141414; border: none; width: 52px; height: 52px; border-radius: 50%; font-size: 24px; cursor: pointer; box-shadow: 0 4px 20px rgba(232,200,64,0.35); display: flex; align-items: center; justify-content: center; transition: transform 0.15s; }
   .fab:hover { transform: scale(1.07); }
@@ -188,7 +207,6 @@
 </head>
 <body>
 
-<!-- PROJECT LIST -->
 <div class="screen active" id="screen-list">
   <div class="sticky-header">
     <div class="logo">CONTE</div>
@@ -200,7 +218,6 @@
   </div>
 </div>
 
-<!-- EDITOR -->
 <div class="screen" id="screen-editor">
   <div class="editor-header">
     <button class="btn-back" onclick="goBack()">←</button>
@@ -216,7 +233,6 @@
     <div class="tab" onclick="switchTab('preview',this)">👁 プレビュー</div>
   </div>
   <div class="editor-main">
-    <!-- INFO -->
     <div class="tab-panel active" id="tab-info">
       <div class="field-group">
         <div class="field-row">
@@ -230,9 +246,29 @@
             <div class="type-chip" onclick="selectType(this,'その他')">✨ その他</div>
           </div>
         </div>
+        <div class="field-row">
+          <div class="field-label">解像度</div>
+          <div class="type-selector">
+            <div class="type-chip" onclick="setRes('1920×1080')">FHD (16:9)</div>
+            <div class="type-chip" onclick="setRes('1080×1920')">縦型 (9:16)</div>
+            <div class="type-chip" onclick="setRes('3840×2160')">4K</div>
+          </div>
+          <input class="field-input" id="resolution" type="text" placeholder="その他の解像度" style="margin-top:6px;">
+        </div>
+        <div class="field-row">
+          <div class="field-label">フレームレート (fps)</div>
+          <div class="type-selector">
+            <div class="type-chip" onclick="setFps('23.976')">23.976</div>
+            <div class="type-chip" onclick="setFps('24')">24</div>
+            <div class="type-chip" onclick="setFps('29.97')">29.97</div>
+            <div class="type-chip" onclick="setFps('30')">30</div>
+            <div class="type-chip" onclick="setFps('60')">60</div>
+          </div>
+          <input class="field-input" id="fps" type="text" placeholder="その他のfps" style="margin-top:6px;">
+        </div>
+        <div class="field-row"><div class="field-label">尺・長さ (プロジェクト全体)</div><input class="field-input" id="duration" type="text" placeholder="例：3:45 / 約5分"></div>
         <div class="field-row"><div class="field-label">クライアント / 参照元</div><input class="field-input" id="clientName" type="text" placeholder="例：株式会社〇〇 / 資料URLなど"></div>
         <div class="field-row"><div class="field-label">楽曲名・原曲情報</div><input class="field-input" id="songTitle" type="text" placeholder="例：アーティスト名「曲名」"></div>
-        <div class="field-row"><div class="field-label">尺・長さ</div><input class="field-input" id="duration" type="text" placeholder="例：3:45 / 約5分"></div>
         <div class="field-row"><div class="field-label">コンセプト・世界観</div><textarea class="field-textarea" id="concept" rows="3" placeholder="退廃的な都市、孤独な主人公が夜を歩く…"></textarea></div>
       </div>
       <div class="field-group">
@@ -245,7 +281,6 @@
       </div>
     </div>
 
-    <!-- CUTS -->
     <div class="tab-panel" id="tab-cuts">
       <div class="cuts-panel-header">
         <div class="cuts-count" id="cutsCount">0 カット</div>
@@ -258,23 +293,24 @@
       <div id="seqList"></div>
     </div>
 
-    <!-- PREVIEW -->
     <div class="tab-panel" id="tab-preview">
       <div class="preview-doc" id="previewDoc"></div>
     </div>
   </div>
 </div>
 
-<!-- FAB -->
 <button class="fab hidden" id="fab" onclick="openAddCutTopLevel()">＋</button>
 
-<!-- CUT MODAL -->
 <div class="modal-overlay" id="cutModal">
   <div class="modal">
     <div class="modal-handle"></div>
     <div class="modal-title" id="cutModalTitle">カットを追加</div>
+    
+    <div class="edit-section-title" style="color:var(--accent);">🎥 映像・画面指示</div>
     <div class="edit-field"><div class="edit-label"><span>📝</span> カットタイトル</div><input class="edit-input" id="m_title" type="text" placeholder="例：主人公アップ、全景、振り向き…"></div>
-    <div class="edit-field"><div class="edit-label"><span>⏱</span> タイムコード / 尺</div><input class="edit-input" id="m_timecode" type="text" placeholder="0:00〜0:05、2秒"></div>
+    <div class="edit-field"><div class="edit-label"><span>⏱</span> カットの尺 (分:秒:コマ)</div><input class="edit-input" id="m_durationStr" type="text" placeholder="例：00:03:15 / 03:15"></div>
+    <div class="edit-field"><div class="edit-label"><span>📌</span> タイムコード等</div><input class="edit-input" id="m_timecode" type="text" placeholder="映像内の位置のメモなど"></div>
+    
     <div class="edit-field">
       <div class="edit-label"><span>🎥</span> カメラワーク</div>
       <div class="camera-grid" id="camGrid">
@@ -315,9 +351,18 @@
         </div>
       </div>
     </div>
-    <div class="edit-field"><div class="edit-label"><span>💬</span> セリフ / ボイス</div><textarea class="edit-input" id="m_dialogue" rows="3" placeholder="発話テキスト、台詞、ナレーション…"></textarea></div>
     <div class="edit-field"><div class="edit-label"><span>🎭</span> ト書き / 演技指示</div><textarea class="edit-input" id="m_action" rows="3" placeholder="動き、表情、照明、効果…"></textarea></div>
-    <div class="edit-field"><div class="edit-label"><span>📌</span> メモ</div><textarea class="edit-input" id="m_note" rows="2" placeholder="技術的な備考、素材メモなど…"></textarea></div>
+
+    <div class="edit-section-title" style="color:var(--green); margin-top:24px;">🔊 音響・セリフ</div>
+    <div class="edit-field"><div class="edit-label"><span>🎙</span> ナレーション</div><textarea class="edit-input" id="m_a_narration" rows="2" placeholder="ナレーションテキスト…"></textarea></div>
+    <div class="edit-field"><div class="edit-label"><span>💬</span> セリフ</div><textarea class="edit-input" id="m_a_dialogue" rows="2" placeholder="セリフテキスト…"></textarea></div>
+    <div class="edit-field"><div class="edit-label"><span>🎵</span> BGM</div><input class="edit-input" id="m_a_bgm" type="text" placeholder="BGMタイトルや指示…"></div>
+    <div class="edit-field"><div class="edit-label"><span>💥</span> SE (効果音)</div><input class="edit-input" id="m_a_se" type="text" placeholder="効果音の指示…"></div>
+    <div class="edit-field"><div class="edit-label"><span>🔔</span> SL (サウンドロゴ)</div><input class="edit-input" id="m_a_sl" type="text" placeholder="サウンドロゴ…"></div>
+
+    <div class="edit-section-title" style="color:#888; margin-top:24px;">その他</div>
+    <div class="edit-field"><div class="edit-label"><span>📌</span> 備考・メモ</div><textarea class="edit-input" id="m_note" rows="2" placeholder="技術的な備考、素材メモなど…"></textarea></div>
+    
     <div class="modal-actions">
       <button class="btn-secondary" onclick="closeCutModal()">キャンセル</button>
       <button class="btn-primary" onclick="saveCut()">保存する</button>
@@ -325,7 +370,6 @@
   </div>
 </div>
 
-<!-- DRAW MODAL -->
 <div class="draw-overlay" id="drawOverlay">
   <div class="draw-toolbar">
     <div class="color-swatch selected" style="background:#1a1a1a" onclick="setDrawColor('#1a1a1a',this)"></div>
@@ -353,7 +397,6 @@
   </div>
 </div>
 
-<!-- NEW PROJECT DIALOG -->
 <div class="dlg-overlay" id="dlgNewProject">
   <div class="dlg-box">
     <div class="dlg-title">企画名をつけよう</div>
@@ -366,7 +409,6 @@
   </div>
 </div>
 
-<!-- NEW SEQUENCE DIALOG -->
 <div class="dlg-overlay" id="dlgNewSeq">
   <div class="dlg-box">
     <div class="dlg-title">シーケンス名</div>
@@ -379,7 +421,6 @@
   </div>
 </div>
 
-<!-- CONFIRM DIALOG -->
 <div class="dlg-overlay" id="dlgConfirm">
   <div class="dlg-box">
     <div class="dlg-title" id="dlgConfirmTitle"></div>
@@ -391,7 +432,6 @@
   </div>
 </div>
 
-<!-- MOVE CUT DIALOG -->
 <div class="dlg-overlay" id="dlgMoveCut">
   <div class="dlg-box">
     <div class="dlg-title">カットの移動先</div>
@@ -406,6 +446,13 @@
 <div class="toast" id="toast"></div>
 
 <script>
+// PWA Service Worker Registration
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(()=>{});
+  });
+}
+
 const STORAGE_KEY = 'conte_v4';
 let projects = [];
 let currentProjectId = null;
@@ -416,6 +463,57 @@ let selectedType = '';
 let selectedCams = new Set();
 let selectedAngle = '';
 let currentImageData = null;
+
+// 時間計算ユーティリティ
+function getFps() {
+  const p = currentProject();
+  if(!p || !p.fps) return 30; // デフォルトは30fps
+  return parseFloat(p.fps) || 30;
+}
+function timecodeToFrames(tc, fps) {
+  if(!tc) return 0;
+  // 例: "00:03:15" -> [0, 3, 15]
+  const parts = tc.split(':').map(n => parseInt(n, 10) || 0);
+  if(parts.length >= 3) {
+    return (parts[parts.length-3] * 60 * fps) + (parts[parts.length-2] * fps) + parts[parts.length-1];
+  } else if(parts.length === 2) {
+    return (parts[0] * fps) + parts[1]; // 分:秒を想定している場合は注意だが、一般的には 秒:フレーム か 分:秒 か。ここでは秒:フレームとみなす
+  } else if(parts.length === 1) {
+    return parts[0];
+  }
+  return 0;
+}
+function framesToTimecode(frames, fps) {
+  if(frames <= 0) return "00:00:00";
+  const totalSecs = Math.floor(frames / fps);
+  const m = Math.floor(totalSecs / 60);
+  const s = totalSecs % 60;
+  const f = Math.floor(frames % fps);
+  return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}:${String(f).padStart(2,'0')}`;
+}
+// すべてのカットの尺を再計算して紐付ける
+function calcDurations() {
+  const p = currentProject(); if(!p) return;
+  const fps = getFps();
+  let totalFrames = 0;
+  
+  // フラットな配列としてカットを取得
+  let ordered = [];
+  if (p.cuts) ordered.push(...p.cuts);
+  if (p.sequences) {
+    p.sequences.forEach(seq => {
+      if (seq.cuts) ordered.push(...seq.cuts);
+    });
+  }
+  
+  ordered.forEach(c => {
+    const f = timecodeToFrames(c.durationStr, fps);
+    totalFrames += f;
+    c._frames = f;
+    c._accumFrames = totalFrames;
+  });
+}
+
 
 function saveProjects() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(projects)); } catch(e) {} }
 function loadProjects() {
@@ -433,7 +531,9 @@ function saveCurrentProject() {
   p.type = selectedType;
   p.clientName = document.getElementById('clientName').value; 
   p.songTitle = document.getElementById('songTitle').value;
-  p.duration = document.getElementById('duration').value;
+  p.resolution = document.getElementById('resolution').value;
+  p.fps = document.getElementById('fps').value;
+  p.duration = document.getElementById('duration').value; // テキストに戻した
   p.concept = document.getElementById('concept').value;
   p.cast = document.getElementById('cast').value;
   p.location = document.getElementById('location').value;
@@ -444,6 +544,9 @@ function saveCurrentProject() {
 }
 
 document.addEventListener('input', e => { if (e.target.closest('#screen-editor')) saveCurrentProject(); });
+
+function setRes(val) { document.getElementById('resolution').value = val; saveCurrentProject(); }
+function setFps(val) { document.getElementById('fps').value = val; saveCurrentProject(); }
 
 function openDlg(id) { document.getElementById(id).classList.add('open'); }
 function closeDlg(id) { document.getElementById(id).classList.remove('open'); }
@@ -474,7 +577,7 @@ function doCreateProject() {
   const title = document.getElementById('dlgProjectTitle').value.trim();
   if (!title) { document.getElementById('dlgProjectTitle').focus(); return; }
   const id = 'p_'+Date.now();
-  projects.push({ id, title, type:'', clientName:'', songTitle:'', duration:'', concept:'', cast:'', location:'', direction:'', deadline:'', cuts:[], sequences:[], updatedAt:Date.now() });
+  projects.push({ id, title, type:'', clientName:'', songTitle:'', resolution:'', fps:'', duration:'', concept:'', cast:'', location:'', direction:'', deadline:'', cuts:[], sequences:[], updatedAt:Date.now() });
   saveProjects(); closeDlg('dlgNewProject'); openProject(id);
 }
 function doDeleteProject(id) {
@@ -486,6 +589,8 @@ function openProject(id) {
   document.getElementById('projectTitle').value = p.title||'';
   document.getElementById('clientName').value = p.clientName||''; 
   document.getElementById('songTitle').value = p.songTitle||'';
+  document.getElementById('resolution').value = p.resolution||'';
+  document.getElementById('fps').value = p.fps||'';
   document.getElementById('duration').value = p.duration||'';
   document.getElementById('concept').value = p.concept||'';
   document.getElementById('cast').value = p.cast||'';
@@ -499,6 +604,7 @@ function openProject(id) {
   document.querySelector('.tabs .tab:first-child').classList.add('active');
   document.getElementById('tab-info').classList.add('active');
   document.getElementById('fab').classList.add('hidden');
+  calcDurations();
   renderCuts(); updateMeta(); showScreen('editor');
 }
 function goBack() { saveCurrentProject(); renderProjectList(); showScreen('list'); }
@@ -533,12 +639,19 @@ function doAddSeq() {
 function deleteSeq(seqId) {
   const p = currentProject(); if (!p) return;
   p.sequences = p.sequences.filter(s=>s.id!==seqId);
-  saveProjects(); renderCuts(); updateMeta(); showToast('削除しました');
+  saveProjects(); calcDurations(); renderCuts(); updateMeta(); showToast('削除しました');
 }
 function toggleSeq(seqId) {
   const p = currentProject(); if (!p) return;
   const seq = p.sequences.find(s=>s.id===seqId); if (!seq) return;
   seq.collapsed = !seq.collapsed; saveProjects(); renderCuts();
+}
+function moveSeq(seqId, dir) {
+  const p = currentProject(); if (!p) return;
+  const idx = p.sequences.findIndex(s=>s.id===seqId); if(idx<0) return;
+  const ni = idx+dir; if(ni<0 || ni>=p.sequences.length) return;
+  [p.sequences[idx], p.sequences[ni]] = [p.sequences[ni], p.sequences[idx]];
+  saveProjects(); calcDurations(); renderCuts();
 }
 
 function getCutArray(p, loc) {
@@ -552,7 +665,7 @@ function openAddCut(loc) {
   editingCutLocation = loc; editingCutId = null;
   selectedCams = new Set(); selectedAngle = ''; currentImageData = null;
   document.getElementById('cutModalTitle').textContent = 'カットを追加';
-  ['m_title','m_timecode','m_camera','m_dialogue','m_action','m_note'].forEach(id=>document.getElementById(id).value='');
+  ['m_title','m_durationStr','m_timecode','m_camera','m_a_narration','m_a_dialogue','m_a_bgm','m_a_se','m_a_sl','m_action','m_note'].forEach(id=>document.getElementById(id).value='');
   document.querySelectorAll('#cutModal .cam-chip').forEach(c=>c.classList.remove('selected'));
   clearImage();
   document.getElementById('cutModal').classList.add('open');
@@ -565,9 +678,16 @@ function openEditCut(loc, cutId) {
   selectedCams = new Set(cut.cams||[]); selectedAngle = cut.angle||''; currentImageData = cut.image||null;
   document.getElementById('cutModalTitle').textContent = 'カットを編集';
   document.getElementById('m_title').value = cut.title||'';
+  document.getElementById('m_durationStr').value = cut.durationStr||'';
   document.getElementById('m_timecode').value = cut.timecode||'';
   document.getElementById('m_camera').value = cut.cameraNote||'';
-  document.getElementById('m_dialogue').value = cut.dialogue||'';
+  
+  document.getElementById('m_a_narration').value = cut.audio?.narration || '';
+  document.getElementById('m_a_dialogue').value = cut.audio?.dialogue || cut.dialogue || ''; 
+  document.getElementById('m_a_bgm').value = cut.audio?.bgm || '';
+  document.getElementById('m_a_se').value = cut.audio?.se || '';
+  document.getElementById('m_a_sl').value = cut.audio?.sl || '';
+  
   document.getElementById('m_action').value = cut.action||'';
   document.getElementById('m_note').value = cut.note||'';
   document.querySelectorAll('#camGrid .cam-chip').forEach(el=>{ const v=el.getAttribute('onclick').match(/'([^']+)'/)[1]; el.classList.toggle('selected',selectedCams.has(v)); });
@@ -576,22 +696,58 @@ function openEditCut(loc, cutId) {
   document.getElementById('cutModal').classList.add('open');
 }
 function closeCutModal() { document.getElementById('cutModal').classList.remove('open'); }
+
 function saveCut() {
   let title = document.getElementById('m_title').value.trim();
   if (!title) { title = '無題のカット'; }
   const p = currentProject(); if (!p) return;
   const arr = getCutArray(p, editingCutLocation); if (!arr) return;
-  const cut = { id: editingCutId||'c_'+Date.now(), title, timecode:document.getElementById('m_timecode').value.trim(), cams:[...selectedCams], angle:selectedAngle, cameraNote:document.getElementById('m_camera').value.trim(), dialogue:document.getElementById('m_dialogue').value.trim(), action:document.getElementById('m_action').value.trim(), note:document.getElementById('m_note').value.trim(), image:currentImageData };
+  
+  let vOff = 0, imgOff = 0, aOff = 0;
+  if (editingCutId) {
+    const existing = arr.find(c=>c.id===editingCutId);
+    if(existing) { vOff = existing.videoOffset||0; imgOff = existing.imageOffset||0; aOff = existing.audioOffset||0; }
+  }
+  
+  const audioData = {
+    narration: document.getElementById('m_a_narration').value.trim(),
+    dialogue: document.getElementById('m_a_dialogue').value.trim(),
+    bgm: document.getElementById('m_a_bgm').value.trim(),
+    se: document.getElementById('m_a_se').value.trim(),
+    sl: document.getElementById('m_a_sl').value.trim(),
+  };
+
+  const cut = { 
+    id: editingCutId||'c_'+Date.now(), 
+    title, 
+    durationStr: document.getElementById('m_durationStr').value.trim(),
+    timecode:document.getElementById('m_timecode').value.trim(), 
+    cams:[...selectedCams], 
+    angle:selectedAngle, 
+    cameraNote:document.getElementById('m_camera').value.trim(), 
+    audio: audioData,
+    action:document.getElementById('m_action').value.trim(), 
+    note:document.getElementById('m_note').value.trim(), 
+    image:currentImageData, 
+    videoOffset:vOff,
+    imageOffset:imgOff,
+    audioOffset:aOff 
+  };
+  
   if (editingCutId) { const idx=arr.findIndex(c=>c.id===editingCutId); if(idx>=0) arr[idx]=cut; }
   else arr.push(cut);
-  saveProjects(); closeCutModal(); renderCuts(); updateMeta();
+  
+  saveProjects(); 
+  calcDurations(); // 新しく追加・更新されたので再計算
+  closeCutModal(); renderCuts(); updateMeta();
   showToast(editingCutId?'更新しました':'カットを追加しました');
 }
+
 function deleteCut(loc, cutId) {
   const p = currentProject(); if (!p) return;
   const arr = getCutArray(p, loc); if (!arr) return;
   const idx = arr.findIndex(c=>c.id===cutId); if (idx>=0) arr.splice(idx,1);
-  saveProjects(); renderCuts(); updateMeta(); showToast('削除しました');
+  saveProjects(); calcDurations(); renderCuts(); updateMeta(); showToast('削除しました');
 }
 function moveCut(loc, cutId, dir) {
   const p = currentProject(); if (!p) return;
@@ -599,7 +755,7 @@ function moveCut(loc, cutId, dir) {
   const idx = arr.findIndex(c=>c.id===cutId); if (idx<0) return;
   const ni = idx+dir; if (ni<0||ni>=arr.length) return;
   [arr[idx],arr[ni]]=[arr[ni],arr[idx]];
-  saveProjects(); renderCuts();
+  saveProjects(); calcDurations(); renderCuts();
 }
 
 function openMoveDialog(loc, cutId) {
@@ -623,7 +779,7 @@ function doMoveCutFolder() {
   if (cutIndex < 0) return;
   const [cut] = sourceArr.splice(cutIndex, 1);
   targetArr.push(cut);
-  saveProjects(); renderCuts(); updateMeta(); closeDlg('dlgMoveCut'); showToast('移動しました');
+  saveProjects(); calcDurations(); renderCuts(); updateMeta(); closeDlg('dlgMoveCut'); showToast('移動しました');
 }
 
 function toggleCam(el, val) { if(selectedCams.has(val)){selectedCams.delete(val);el.classList.remove('selected');}else{selectedCams.add(val);el.classList.add('selected');} }
@@ -798,13 +954,36 @@ function renderCutCard(cut, ci, loc) {
   if (cut.cams&&cut.cams.length) chips.push(cut.cams[0].split('（')[0]);
   if (cut.angle) chips.push(cut.angle.split('（')[0]);
   const arr = (loc==='top') ? currentProject().cuts : currentProject().sequences.find(s=>s.id===loc).cuts;
+  
+  let audioSummary = '';
+  if(cut.audio) {
+    const parts = [];
+    if(cut.audio.narration) parts.push('NA');
+    if(cut.audio.dialogue) parts.push('セリフ');
+    if(cut.audio.bgm) parts.push('BGM');
+    if(cut.audio.se) parts.push('SE');
+    if(cut.audio.sl) parts.push('SL');
+    audioSummary = parts.join(', ');
+  } else if (cut.dialogue) {
+    audioSummary = 'セリフ';
+  }
+  
+  const fps = getFps();
+  const f_dur = framesToTimecode(cut._frames||0, fps);
+  const f_accum = framesToTimecode(cut._accumFrames||0, fps);
+
   return `<div class="cut-card" id="cc-${cut.id}">
     <div class="cut-card-header" onclick="toggleCut('${cut.id}')">
       <div class="cut-num">C${String(ci+1).padStart(2,'0')}</div>
-      ${cut.image?`<img class="cut-thumb" src="${cut.image}" alt="">`:''}
+      
+      <div class="cut-thumb-wrap">
+        ${cut.image ? `<img src="${cut.image}" alt="">` : `<span style="color:#ddd; font-size:10px;">No Image</span>`}
+        <div class="cut-time-overlay">(${f_dur} / ${f_accum})</div>
+      </div>
+      
       <div class="cut-summary">
         <div class="cut-title-preview">${escHtml(cut.title)}</div>
-        <div class="cut-chips">${chips.map(c=>`<div class="mini-chip">${escHtml(c)}</div>`).join('')}${cut.dialogue?'<div class="mini-chip">💬</div>':''}${cut.action?'<div class="mini-chip">🎭</div>':''}</div>
+        <div class="cut-chips">${chips.map(c=>`<div class="mini-chip">${escHtml(c)}</div>`).join('')}${audioSummary?'<div class="mini-chip">💬</div>':''}${cut.action?'<div class="mini-chip">🎭</div>':''}</div>
       </div>
       <div class="cut-actions">
         <button class="btn-sm" onclick="event.stopPropagation();moveCut('${loc}','${cut.id}',-1)" ${ci===0?'style="opacity:0.3;pointer-events:none"':''}>↑</button>
@@ -815,10 +994,11 @@ function renderCutCard(cut, ci, loc) {
       </div>
     </div>
     <div class="cut-detail" id="cd-${cut.id}">
-      ${detRow('タイムコード',cut.timecode)}
+      ${detRow('尺 / タイム', `${escHtml(cut.durationStr||'--')} / ${escHtml(cut.timecode||'')}`)}
       ${detRow('カメラ',[...(cut.cams||[]),cut.angle,cut.cameraNote].filter(Boolean).join(' / '))}
-      ${detRow('セリフ',cut.dialogue)}
       ${detRow('ト書き',cut.action)}
+      <div style="border-top:1px dashed #444; margin-top:8px; padding-top:4px;"></div>
+      ${detRow('音声・音響',audioSummary)}
       ${detRow('メモ',cut.note)}
       ${cut.image?`<img class="cut-detail-img" src="${cut.image}" alt="コンテ絵">`:''}
     </div>
@@ -832,7 +1012,7 @@ function renderCuts() {
   document.getElementById('topCuts').innerHTML = (p.cuts||[]).map((cut,ci)=>renderCutCard(cut,ci,'top')).join('');
 
   const list = document.getElementById('seqList');
-  list.innerHTML = (p.sequences||[]).map(seq => {
+  list.innerHTML = (p.sequences||[]).map((seq, si) => {
     const cutsHtml = seq.cuts.map((cut,ci)=>renderCutCard(cut,ci,seq.id)).join('');
     return `<div class="seq-block">
       <div class="seq-header" onclick="toggleSeq('${seq.id}')">
@@ -840,6 +1020,8 @@ function renderCuts() {
         <div class="seq-label">${escHtml(seq.title)}</div>
         <div class="seq-meta">${seq.cuts.length} カット</div>
         <div class="seq-actions">
+          <button class="btn-ssm" onclick="event.stopPropagation();moveSeq('${seq.id}',-1)" ${si===0?'style="opacity:0.3;pointer-events:none"':''}>↑</button>
+          <button class="btn-ssm" onclick="event.stopPropagation();moveSeq('${seq.id}',1)" ${si===p.sequences.length-1?'style="opacity:0.3;pointer-events:none"':''}>↓</button>
           <button class="btn-ssm danger" onclick="event.stopPropagation();confirmDelete('シーケンスを削除しますか？','「${seq.title.replace(/'/g,"\\'")}」と中のカットをすべて削除します。',()=>deleteSeq('${seq.id}'))">🗑</button>
         </div>
       </div>
@@ -851,7 +1033,7 @@ function renderCuts() {
   }).join('');
 }
 function detRow(label, val) {
-  if (!val) return '';
+  if (!val || val === ' / ') return '';
   return `<div style="display:grid;grid-template-columns:68px 1fr;gap:6px;margin-top:8px;font-size:11px;align-items:start;"><div style="color:var(--text-dim);font-family:var(--mono);font-size:10px;padding-top:2px;">${label}</div><div style="color:var(--text-mid);white-space:pre-wrap;word-break:break-word;">${escHtml(val)}</div></div>`;
 }
 function toggleCut(cutId) {
@@ -859,79 +1041,157 @@ function toggleCut(cutId) {
   document.getElementById('cc-'+cutId).classList.toggle('editing');
 }
 
-// ===== PREVIEW =====
+// ===== PREVIEW & PDF OFFSET =====
+function findCutById(cutId) {
+  const p = currentProject(); if(!p) return null;
+  let cut = p.cuts.find(c=>c.id===cutId); if(cut) return cut;
+  for(let s of p.sequences) { cut = s.cuts.find(c=>c.id===cutId); if(cut) return cut; }
+  return null;
+}
+
+function changeOffset(cutId, type, delta) {
+  const cut = findCutById(cutId); if(!cut) return;
+  if(type==='v') { cut.videoOffset = Math.max(0, (cut.videoOffset||0)+delta); }
+  if(type==='img') { cut.imageOffset = Math.max(0, (cut.imageOffset||0)+delta); } // 追加
+  if(type==='a') { cut.audioOffset = Math.max(0, (cut.audioOffset||0)+delta); }
+  saveProjects(); buildPreview();
+}
+
 function buildPreview() {
   const p = currentProject(); if (!p) return;
   const now = new Date().toLocaleDateString('ja-JP');
   let html = `<div class="preview-title">${escHtml(p.title||'（タイトル未入力）')}</div>`;
   html += `<div class="preview-meta">作成日：${now} · カット ${countCuts(p)}</div>`;
+  
+  const fpsStr = p.fps ? `${p.fps} fps` : '';
+  
   html += `<div class="preview-info-block">`;
-  [['タイプ',p.type],['クライアント',p.clientName],['楽曲',p.songTitle],['尺',p.duration],['コンセプト',p.concept],['キャスト',p.cast],['ロケ',p.location],['演出',p.direction],['納期',p.deadline]]
+  [['タイプ',p.type],['クライアント',p.clientName],['楽曲',p.songTitle],['解像度',p.resolution],['フレームレート',fpsStr],['尺 (全体)',p.duration],['コンセプト',p.concept],['キャスト',p.cast],['ロケ',p.location],['演出',p.direction],['納期',p.deadline]]
     .filter(([,v])=>v).forEach(([k,v])=>{html+=`<div class="preview-info-row"><div class="preview-info-key">${k}</div><div>${escHtml(v)}</div></div>`;});
   html += `</div>`;
 
   if (countCuts(p)===0) {
     html += `<div style="color:var(--text-dim);font-size:13px;text-align:center;padding:20px 0;">カットがまだありません</div>`;
   } else {
-    (p.cuts||[]).forEach((cut,ci)=>{ html += renderPreviewCut(cut,ci); });
+    html += `<table class="preview-table"><tr><th style="width:30%">ト書き / 画面指示</th><th style="width:40%">画面</th><th style="width:30%">音声 / セリフ</th></tr>`;
+    (p.cuts||[]).forEach((cut,ci)=>{ html += renderPreviewCutRow(cut, ci); });
     (p.sequences||[]).forEach(seq => {
-      html += `<div class="preview-seq-title">▶ ${escHtml(seq.title)}</div>`;
-      seq.cuts.forEach((cut,ci)=>{ html += renderPreviewCut(cut,ci); });
+      html += `<tr><td colspan="3"><div class="preview-seq-title">▶ ${escHtml(seq.title)}</div></td></tr>`;
+      seq.cuts.forEach((cut,ci)=>{ html += renderPreviewCutRow(cut, ci); });
     });
+    html += `</table>`;
   }
   document.getElementById('previewDoc').innerHTML = html;
 }
-function renderPreviewCut(cut, ci) {
+
+function renderPreviewCutRow(cut, ci, isPdf = false) {
+  const vOff = cut.videoOffset || 0;
+  const imgOff = cut.imageOffset || 0; // 追加
+  const aOff = cut.audioOffset || 0;
+  
+  const vMargin = vOff * 15; 
+  const imgMargin = imgOff * 15; // 追加
+  const aMargin = aOff * 15;
+  
+  const fps = getFps();
+  const f_dur = framesToTimecode(cut._frames||0, fps);
+  const f_accum = framesToTimecode(cut._accumFrames||0, fps);
+
   const cam = [...(cut.cams||[]),cut.angle,cut.cameraNote].filter(Boolean).join(' / ');
-  const textRows = [
-    cut.timecode ? pvRow('TIMECODE',cut.timecode) : '',
-    cam          ? pvRow('CAMERA',cam) : '',
-    cut.dialogue ? pvRow('DIALOGUE',cut.dialogue) : '',
-    cut.action   ? pvRow('ACTION',cut.action) : '',
-    cut.note     ? pvRow('NOTE',cut.note) : '',
-  ].join('');
-  let html = `<div class="preview-cut">`;
-  html += `<div class="preview-cut-title">C${String(ci+1).padStart(2,'0')} ${escHtml(cut.title)}</div>`;
-  html += `<div class="preview-cut-body${cut.image?'':' no-img'}">`;
-  if (cut.image) html += `<img class="preview-cut-thumb" src="${cut.image}" alt="コンテ絵">`;
-  html += `<div>${textRows}</div></div></div>`;
+  
+  // 画ブロックの内容生成
+  let vHtmlInner = `<div style="font-weight:bold; color:${isPdf?'#333':'var(--accent)'}; margin-bottom:4px;">C${String(ci+1).padStart(2,'0')} ${escHtml(cut.title)}</div>`;
+  if (cut.timecode) vHtmlInner += `<div style="font-size:10px; color:#888;">TIME: ${escHtml(cut.timecode)}</div>`;
+  if (cam) vHtmlInner += `<div style="font-size:10px; color:#888;">CAM: ${escHtml(cam)}</div>`;
+  if (cut.action) vHtmlInner += `<div style="margin-top:6px; white-space:pre-wrap;">${escHtml(cut.action)}</div>`;
+
+  // 絵ブロックの内容生成 (尺表示枠込み)
+  let imgHtmlInner = `
+    <div class="preview-cut-thumb-wrap">
+      ${cut.image ? `<img src="${cut.image}" alt="">` : `<span style="color:#ddd; font-size:14px;">No Image</span>`}
+      <div style="position:absolute; bottom:2px; right:2px; background:rgba(0,0,0,0.6); color:#fff; font-size:9px; padding:2px 4px; border-radius:3px;">
+        (${f_dur} / ${f_accum})
+      </div>
+    </div>
+  `;
+
+  // 音ブロックの内容生成
+  let aHtmlInner = '';
+  if (cut.audio) {
+    if(cut.audio.narration) aHtmlInner += `<div style="margin-bottom:6px;"><b>[NA]</b><br>${escHtml(cut.audio.narration)}</div>`;
+    if(cut.audio.dialogue) aHtmlInner += `<div style="margin-bottom:6px;"><b>[セリフ]</b><br>${escHtml(cut.audio.dialogue)}</div>`;
+    if(cut.audio.bgm) aHtmlInner += `<div style="margin-bottom:4px;"><b>[BGM]</b> ${escHtml(cut.audio.bgm)}</div>`;
+    if(cut.audio.se) aHtmlInner += `<div style="margin-bottom:4px;"><b>[SE]</b> ${escHtml(cut.audio.se)}</div>`;
+    if(cut.audio.sl) aHtmlInner += `<div style="margin-bottom:4px;"><b>[SL]</b> ${escHtml(cut.audio.sl)}</div>`;
+  } else if (cut.dialogue) {
+    aHtmlInner += `<div style="margin-bottom:6px;"><b>[セリフ]</b><br>${escHtml(cut.dialogue)}</div>`;
+  }
+  if (cut.note) aHtmlInner += `<div style="margin-top:6px; font-size:10px; color:#888; white-space:pre-wrap;">メモ: ${escHtml(cut.note)}</div>`;
+
+  let html = `<tr>
+    <td>
+      <div style="margin-top:${vMargin}px">
+        ${vHtmlInner}
+        ${!isPdf ? `<div class="offset-controls"><button class="btn-offset" onclick="changeOffset('${cut.id}','v',1)">画↓</button><button class="btn-offset" onclick="changeOffset('${cut.id}','v',-1)" ${vOff<=0?'disabled':''}>画↑</button></div>` : ''}
+      </div>
+    </td>
+    <td style="text-align:center; vertical-align:top;">
+      <div style="margin-top:${imgMargin}px">
+        ${imgHtmlInner}
+        ${!isPdf ? `<div class="offset-controls center"><button class="btn-offset" onclick="changeOffset('${cut.id}','img',1)">絵↓</button><button class="btn-offset" onclick="changeOffset('${cut.id}','img',-1)" ${imgOff<=0?'disabled':''}>絵↑</button></div>` : ''}
+      </div>
+    </td>
+    <td>
+      <div style="margin-top:${aMargin}px">
+        ${aHtmlInner}
+        ${!isPdf && aHtmlInner ? `<div class="offset-controls"><button class="btn-offset" onclick="changeOffset('${cut.id}','a',1)">音↓</button><button class="btn-offset" onclick="changeOffset('${cut.id}','a',-1)" ${aOff<=0?'disabled':''}>音↑</button></div>` : ''}
+      </div>
+    </td>
+  </tr>`;
   return html;
 }
-function pvRow(k,v) { return `<div class="preview-row"><div class="preview-key">${k}</div><div class="preview-val">${escHtml(v)}</div></div>`; }
 
 // ===== EXPORT =====
 function exportDoc() {
   const p = currentProject(); if (!p) return;
   const now = new Date().toLocaleDateString('ja-JP');
   function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-  const infoRows = [['タイプ',p.type],['クライアント',p.clientName],['楽曲',p.songTitle],['尺',p.duration],['コンセプト',p.concept],['キャスト',p.cast],['ロケ',p.location],['演出',p.direction],['納期',p.deadline]].filter(([,v])=>v).map(([k,v])=>`<tr><td class="key">${k}</td><td>${esc(v)}</td></tr>`).join('');
+  
+  const fpsStr = p.fps ? `${p.fps} fps` : '';
+  const infoRows = [['タイプ',p.type],['クライアント',p.clientName],['楽曲',p.songTitle],['解像度',p.resolution],['フレームレート',fpsStr],['尺 (全体)',p.duration],['コンセプト',p.concept],['キャスト',p.cast],['ロケ',p.location],['演出',p.direction],['納期',p.deadline]].filter(([,v])=>v).map(([k,v])=>`<tr><td class="key">${k}</td><td>${esc(v)}</td></tr>`).join('');
 
-  function cutBlock(cut,ci){
-    const cam=[...(cut.cams||[]),cut.angle,cut.cameraNote].filter(Boolean).join(' / ');
-    const rows=[cut.timecode?`<tr><td class="key">TIMECODE</td><td>${esc(cut.timecode)}</td></tr>`:'',cam?`<tr><td class="key">CAMERA</td><td>${esc(cam)}</td></tr>`:'',cut.dialogue?`<tr><td class="key">DIALOGUE</td><td style="white-space:pre-wrap">${esc(cut.dialogue)}</td></tr>`:'',cut.action?`<tr><td class="key">ACTION</td><td style="white-space:pre-wrap">${esc(cut.action)}</td></tr>`:'',cut.note?`<tr><td class="key">NOTE</td><td>${esc(cut.note)}</td></tr>`:''].join('');
-    return `<div class="cut-block"><div style="display:grid;grid-template-columns:${cut.image?'120px 1fr':'1fr'};gap:10px;align-items:start">${cut.image?`<img style="max-width:120px;max-height:120px;width:auto;height:auto;object-fit:contain;border-radius:5px;background:#f5f5f5;border:1px solid #ddd;display:block;" src="${cut.image}" alt="">`:''}
-      <div><div class="cut-head">C${String(ci+1).padStart(2,'0')}　${esc(cut.title)}</div>${rows?`<table>${rows}</table>`:''}</div></div></div>`;
-  }
-
-  let bodyHtml = (p.cuts||[]).map((c,i)=>cutBlock(c,i)).join('');
-  bodyHtml += (p.sequences||[]).map(seq=>{
-    return `<div class="seq-label-print">▶ ${esc(seq.title)}</div>` + seq.cuts.map((c,i)=>cutBlock(c,i)).join('');
-  }).join('');
+  let tableHtml = `<table class="pdf-table"><tr><th style="width:30%">ト書き / 画面指示</th><th style="width:40%">画面</th><th style="width:30%">音声 / セリフ</th></tr>`;
+  (p.cuts||[]).forEach((cut,ci)=>{ tableHtml += renderPreviewCutRow(cut, ci, true); });
+  (p.sequences||[]).forEach(seq=>{
+    tableHtml += `<tr><td colspan="3"><div class="seq-label-print">▶ ${esc(seq.title)}</div></td></tr>`;
+    seq.cuts.forEach((cut,ci)=>{ tableHtml += renderPreviewCutRow(cut, ci, true); });
+  });
+  tableHtml += `</table>`;
 
   const html=`<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><title>${esc(p.title||'企画書')}</title>
-<style>body{font-family:'Hiragino Sans','Yu Gothic','Meiryo',sans-serif;color:#1a1a1a;margin:0;padding:24px 32px;font-size:13px;line-height:1.7;}h1{font-size:22px;font-weight:800;margin:0 0 4px;}
-.meta{font-size:11px;color:#888;margin-bottom:20px;font-family:monospace;}.section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#888;border-bottom:1px solid #ddd;padding-bottom:4px;margin:20px 0 10px;}
-table{width:100%;border-collapse:collapse;}td{padding:4px 8px;vertical-align:top;font-size:12px;}td.key{width:80px;color:#888;font-family:monospace;font-size:10px;white-space:nowrap;}tr{border-bottom:1px solid #f0f0f0;}
-.seq-label-print{font-weight:700;font-size:12px;color:#4a3fa0;background:#f0eeff;border-radius:5px;padding:4px 10px;margin:16px 0 8px;font-family:monospace;display:inline-block;}
-.cut-block{border:1px solid #e0e0e0;border-radius:8px;padding:10px 12px;margin-bottom:10px;break-inside:avoid;}
-.cut-head{font-weight:700;font-size:12px;color:#333;margin-bottom:6px;font-family:monospace;}
-@media print{body{padding:0;}}
+<style>
+body{font-family:'Hiragino Sans','Yu Gothic','Meiryo',sans-serif;color:#1a1a1a;margin:0;padding:24px 32px;font-size:12px;line-height:1.6;}
+h1{font-size:22px;font-weight:800;margin:0 0 4px;}
+.meta{font-size:11px;color:#888;margin-bottom:20px;font-family:monospace;}
+.section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#888;border-bottom:1px solid #ddd;padding-bottom:4px;margin:20px 0 10px;}
+.info-table{width:100%;border-collapse:collapse;margin-bottom:20px;}
+.info-table td{padding:4px 8px;vertical-align:top;font-size:12px;border-bottom:1px solid #f0f0f0;}
+.info-table td.key{width:80px;color:#888;font-family:monospace;font-size:10px;white-space:nowrap;}
+.pdf-table{width:100%;border-collapse:collapse;table-layout:fixed;}
+.pdf-table th, .pdf-table td{border:1px solid #333;padding:10px;vertical-align:top;word-wrap:break-word;}
+.pdf-table th{background:#f0f0f0;font-size:11px;text-align:center;}
+
+.preview-cut-thumb-wrap { position: relative; width: 100%; max-width: 200px; aspect-ratio: 16/9; margin: 0 auto; background: #fff; border: 1px solid #ccc; border-radius: 4px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+.preview-cut-thumb-wrap img { width: 100%; height: 100%; object-fit: contain; }
+
+.seq-label-print{font-weight:700;font-size:12px;color:#111;background:#e0e0e0;padding:4px 10px;display:inline-block;}
+@media print{body{padding:0;} .pdf-table {page-break-inside:auto;} tr {page-break-inside:avoid; page-break-after:auto;}}
 </style></head><body>
 <h1>${esc(p.title||'企画書')}</h1>
 <div class="meta">作成日：${now}　カット ${countCuts(p)}</div>
-${infoRows?`<div class="section-title">企画情報</div><table>${infoRows}</table>`:''}
-<div class="section-title">コンテ</div>
-${bodyHtml||'<p style="color:#aaa;font-size:12px">カットなし</p>'}
+${infoRows?`<div class="section-title">企画情報</div><table class="info-table">${infoRows}</table>`:''}
+<div class="section-title">絵コンテ</div>
+${countCuts(p)>0 ? tableHtml : '<p style="color:#aaa;font-size:12px">カットなし</p>'}
 </body></html>`;
 
   const win=window.open('','_blank');
