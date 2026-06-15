@@ -206,7 +206,6 @@
 </head>
 <body>
 
-<!-- PROJECT LIST -->
 <div class="screen active" id="screen-list">
   <div class="sticky-header">
     <div class="logo">CONTE</div>
@@ -218,7 +217,6 @@
   </div>
 </div>
 
-<!-- EDITOR -->
 <div class="screen" id="screen-editor">
   <div class="editor-header">
     <button class="btn-back" onclick="goBack()">←</button>
@@ -232,11 +230,9 @@
     <div class="tab active" onclick="switchTab('info',this)">📋 企画情報</div>
     <div class="tab" onclick="switchTab('cuts',this)">🎬 カット</div>
     <div class="tab" onclick="switchTab('preview',this)">👁 プレビュー</div>
-    <!-- 新機能：原稿・尺確認タブ -->
     <div class="tab" onclick="switchTab('script',this)">📜 原稿・尺確認</div>
   </div>
   <div class="editor-main">
-    <!-- INFO -->
     <div class="tab-panel active" id="tab-info">
       <div class="field-group">
         <div class="field-row">
@@ -285,7 +281,6 @@
       </div>
     </div>
 
-    <!-- CUTS -->
     <div class="tab-panel" id="tab-cuts">
       <div class="cuts-panel-header">
         <div class="cuts-count" id="cutsCount">0 カット</div>
@@ -293,14 +288,11 @@
           <button class="btn-add-seq" onclick="openAddSeq()">📁 シーケンス追加</button>
         </div>
       </div>
-      <!-- top-level cuts (ungrouped) -->
       <div class="top-cuts" id="topCuts"></div>
       <button class="btn-add-cut" onclick="openAddCutTopLevel()">＋ カットを追加</button>
-      <!-- sequences -->
       <div id="seqList"></div>
     </div>
 
-    <!-- PREVIEW -->
     <div class="tab-panel" id="tab-preview">
       <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px; background:var(--surface); padding:10px 14px; border-radius:8px; border:1px solid var(--border);">
         <span style="font-size:12px; color:var(--text-dim);">🔍 ズーム表示</span>
@@ -313,7 +305,6 @@
       </div>
     </div>
 
-    <!-- SCRIPT (原稿・尺確認) -->
     <div class="tab-panel" id="tab-script">
       <div class="preview-wrapper" style="padding:16px;">
         <div id="scriptDoc"></div>
@@ -322,16 +313,13 @@
   </div>
 </div>
 
-<!-- FAB -->
 <button class="fab hidden" id="fab" onclick="openAddCutTopLevel()">＋</button>
 
-<!-- CUT MODAL -->
 <div class="modal-overlay" id="cutModal">
   <div class="modal">
     <div class="modal-handle"></div>
     <div class="modal-title" id="cutModalTitle">カットを追加</div>
     
-    <!-- 映像ブロック -->
     <div class="edit-section-title" style="color:var(--accent);">🎥 映像・画面指示</div>
     <div class="edit-field">
       <div class="edit-label"><span>⏱</span> カットの尺 (分:秒:コマ)</div>
@@ -388,13 +376,10 @@
     </div>
     <div class="edit-field"><div class="edit-label"><span>🎭</span> ト書き / 演技指示</div><textarea class="edit-input" id="m_action" rows="3" placeholder="動き、表情、照明、効果…"></textarea></div>
 
-    <!-- 音声ブロック -->
     <div class="edit-section-title" style="color:var(--green); margin-top:24px;">🔊 音響・セリフ</div>
     <div class="edit-field"><div class="edit-label"><span>🎙</span> ナレーション</div><textarea class="edit-input" id="m_a_narration" rows="2" placeholder="ナレーションテキスト…"></textarea></div>
-    <!-- 分離: セリフと歌詞 -->
     <div class="edit-field"><div class="edit-label"><span>💬</span> セリフ</div><textarea class="edit-input" id="m_a_dialogue" rows="2" placeholder="セリフテキスト…"></textarea></div>
     <div class="edit-field"><div class="edit-label"><span>🎶</span> 歌詞</div><textarea class="edit-input" id="m_a_lyrics" rows="2" placeholder="歌詞テキスト…"></textarea></div>
-    
     <div class="edit-field"><div class="edit-label"><span>🎵</span> BGM</div><input class="edit-input" id="m_a_bgm" type="text" placeholder="BGMタイトルや指示…"></div>
     <div class="edit-field"><div class="edit-label"><span>💥</span> SE (効果音)</div><input class="edit-input" id="m_a_se" type="text" placeholder="効果音の指示…"></div>
     <div class="edit-field"><div class="edit-label"><span>🔔</span> SL (サウンドロゴ)</div><input class="edit-input" id="m_a_sl" type="text" placeholder="サウンドロゴ…"></div>
@@ -409,7 +394,6 @@
   </div>
 </div>
 
-<!-- DRAW MODAL -->
 <div class="draw-overlay" id="drawOverlay">
   <div class="draw-toolbar">
     <div class="color-swatch selected" style="background:#1a1a1a" onclick="setDrawColor('#1a1a1a',this)"></div>
@@ -437,7 +421,6 @@
   </div>
 </div>
 
-<!-- NEW PROJECT DIALOG -->
 <div class="dlg-overlay" id="dlgNewProject">
   <div class="dlg-box">
     <div class="dlg-title">企画名をつけよう</div>
@@ -450,7 +433,6 @@
   </div>
 </div>
 
-<!-- NEW SEQUENCE DIALOG -->
 <div class="dlg-overlay" id="dlgNewSeq">
   <div class="dlg-box">
     <div class="dlg-title">シーケンス名</div>
@@ -463,7 +445,6 @@
   </div>
 </div>
 
-<!-- CONFIRM DIALOG -->
 <div class="dlg-overlay" id="dlgConfirm">
   <div class="dlg-box">
     <div class="dlg-title" id="dlgConfirmTitle"></div>
@@ -475,7 +456,6 @@
   </div>
 </div>
 
-<!-- MOVE CUT DIALOG -->
 <div class="dlg-overlay" id="dlgMoveCut">
   <div class="dlg-box">
     <div class="dlg-title">カットの移動先</div>
@@ -520,7 +500,7 @@ let currentImageData = null;
 // 時間計算ユーティリティ
 function getFps() {
   const p = currentProject();
-  if(!p || !p.fps) return 30; // デフォルトは30fps
+  if(!p || !p.fps) return 30;
   return parseFloat(p.fps) || 30;
 }
 function timecodeToFrames(m, s, f, fps) {
@@ -712,7 +692,7 @@ function openAddCut(loc) {
   selectedCams = new Set(); selectedAngle = ''; currentImageData = null;
   document.getElementById('cutModalTitle').textContent = 'カットを追加';
   
-  // フォームリセット
+  // タイトル入力欄を廃止したため削除
   ['m_timecode','m_camera','m_a_narration','m_a_dialogue','m_a_lyrics','m_a_bgm','m_a_se','m_a_sl','m_action','m_note'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('m_durMin').value = '0';
   document.getElementById('m_durSec').value = '0';
@@ -860,7 +840,7 @@ function clearImage() {
   document.getElementById('m_img_input').value='';
 }
 
-// ===== DRAW MODAL =====
+// ===== DRAW MODAL (ベジェ曲線補間 ＆ 筆圧検知 追加) =====
 let drawCtx, drawCanvas;
 let drawColor = '#1a1a1a';
 let drawSize = 5;
@@ -868,6 +848,9 @@ let drawing = false;
 let eraserOn = false;
 let drawHistory = [];
 let drawAspectVertical = false;
+
+// 描画のポイントを保存して曲線を計算するための配列
+let drawPoints = [];
 
 function openDrawModal() {
   document.getElementById('drawOverlay').classList.add('open');
@@ -949,26 +932,88 @@ function getPos(e) {
   };
 }
 
+// 修正：始点の記録
 function startDraw(e) {
   drawing = true;
   const pos = getPos(e);
+  // マウスの場合は筆圧0.5として扱う、ペンの場合は取得したpressureを使用
+  const p = e.pointerType === 'mouse' ? 0.5 : (e.pressure !== undefined ? e.pressure : 0.5);
+  drawPoints = [{ x: pos.x, y: pos.y, p: p }];
+  
+  // 描き始めに点を打つ
   drawCtx.beginPath();
-  drawCtx.moveTo(pos.x, pos.y);
+  drawCtx.fillStyle = eraserOn ? '#ffffff' : drawColor;
+  const baseSize = eraserOn ? drawSize * 3 : drawSize;
+  // 筆圧を加味した太さ
+  drawCtx.arc(pos.x, pos.y, (baseSize * (0.4 + p * 1.2)) / 2, 0, Math.PI*2);
+  drawCtx.fill();
+  
   e.preventDefault();
 }
+
+// 修正：ベジェ曲線補間と筆圧検知による滑らかな描画
 function moveDraw(e) {
   if (!drawing) return;
   const pos = getPos(e);
-  drawCtx.lineTo(pos.x, pos.y);
-  drawCtx.strokeStyle = eraserOn ? '#ffffff' : drawColor;
-  drawCtx.lineWidth = eraserOn ? drawSize*3 : drawSize;
-  drawCtx.stroke();
+  const p = e.pointerType === 'mouse' ? 0.5 : (e.pressure !== undefined ? e.pressure : 0.5);
+
+  // わずかなブレを拾わないための処理（距離が近すぎる場合は無視）
+  const lastPt = drawPoints[drawPoints.length - 1];
+  const dx = pos.x - lastPt.x;
+  const dy = pos.y - lastPt.y;
+  if (dx*dx + dy*dy < 4) return;
+
+  drawPoints.push({ x: pos.x, y: pos.y, p: p });
+
+  // 点が3つ以上貯まったら曲線を引く
+  if (drawPoints.length >= 3) {
+    const p0 = drawPoints[drawPoints.length - 3];
+    const p1 = drawPoints[drawPoints.length - 2];
+    const p2 = drawPoints[drawPoints.length - 1];
+
+    // 中間点を計算
+    const mid1 = { x: (p0.x + p1.x) / 2, y: (p0.y + p1.y) / 2 };
+    const mid2 = { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 };
+
+    drawCtx.beginPath();
+    drawCtx.moveTo(mid1.x, mid1.y);
+    // 直線(lineTo)ではなく、p1をコントロールポイントとしてmid2まで曲線を引く
+    drawCtx.quadraticCurveTo(p1.x, p1.y, mid2.x, mid2.y);
+
+    const baseSize = eraserOn ? drawSize * 3 : drawSize;
+    // 筆圧から線の太さを決定（0.4倍〜1.6倍の範囲）
+    drawCtx.lineWidth = baseSize * (0.4 + p1.p * 1.2);
+    drawCtx.strokeStyle = eraserOn ? '#ffffff' : drawColor;
+    drawCtx.stroke();
+  }
   e.preventDefault();
 }
+
+// 修正：描画終了時に末尾の隙間を埋める
 function endDraw(e) {
-  if (drawing) pushHistory();
+  if (!drawing) return;
+  
+  // 最後の点の処理（2点以上あれば末尾を描画）
+  if (drawPoints.length >= 2) {
+    const p1 = drawPoints[drawPoints.length - 2];
+    const p2 = drawPoints[drawPoints.length - 1];
+    const mid = { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 };
+    
+    drawCtx.beginPath();
+    drawCtx.moveTo(mid.x, mid.y);
+    drawCtx.lineTo(p2.x, p2.y);
+    
+    const baseSize = eraserOn ? drawSize * 3 : drawSize;
+    drawCtx.lineWidth = baseSize * (0.4 + p2.p * 1.2);
+    drawCtx.strokeStyle = eraserOn ? '#ffffff' : drawColor;
+    drawCtx.stroke();
+  }
+  
   drawing = false;
+  drawPoints = [];
+  pushHistory();
 }
+
 function setDrawColor(c, el) {
   drawColor = c; eraserOn = false;
   document.querySelectorAll('.color-swatch').forEach(s=>s.classList.remove('selected'));
@@ -1223,7 +1268,7 @@ function renderPreviewCutRow(cut, ci, isPdf = false) {
   return html;
 }
 
-// ===== SCRIPT VIEW (新機能: 原稿・尺確認) =====
+// ===== SCRIPT VIEW (原稿・尺確認) =====
 function buildScriptView() {
   const p = currentProject(); if (!p) return;
   let totalChars = 0;
@@ -1243,7 +1288,6 @@ function buildScriptView() {
     }
     
     if (text.trim()) {
-      // カッコや空白を除外して純粋な文字数をカウント
       const rawText = text.replace(/【.*?】/g, '').replace(/\s+/g, '');
       totalChars += rawText.length;
       
@@ -1264,7 +1308,6 @@ function buildScriptView() {
   const totalDurFrames = cuts.length > 0 ? cuts[cuts.length-1]._accumFrames : 0;
   const totalDurStr = framesToTimecode(totalDurFrames, fps);
   
-  // 目安尺の計算: 1秒あたり約5文字
   const estSec = totalChars / 5;
   const estDurStr = framesToTimecode(estSec * fps, fps);
 
