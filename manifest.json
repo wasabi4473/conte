@@ -1,0 +1,19 @@
+{
+  "name": "コンテ帳",
+  "short_name": "コンテ帳",
+  "description": "字コンテ・絵コンテ作成アプリ",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#141414",
+  "theme_color": "#1e1e1e",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
