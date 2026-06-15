@@ -215,7 +215,10 @@
 <div class="screen active" id="screen-list">
   <div class="sticky-header">
     <div class="logo">CONTE</div>
-    <button class="btn-new" onclick="createProject()">＋ 新規企画</button>
+    <div style="display:flex; gap:8px;">
+      <button class="btn-new" style="background:transparent;border:1px solid var(--border);color:var(--text-mid);" onclick="openBackupDlg()">⚙ データ管理</button>
+      <button class="btn-new" onclick="createProject()">＋ 新規企画</button>
+    </div>
   </div>
   <div class="list-body">
     <div class="list-empty" id="listEmpty"><div class="list-empty-icon">🎬</div>企画がまだありません<br>「新規企画」からはじめましょう</div>
@@ -520,6 +523,41 @@
     <div class="dlg-actions">
       <button class="btn-secondary" onclick="closeDlg('dlgMoveCut')">キャンセル</button>
       <button class="btn-primary" onclick="doMoveCutFolder()">移動する</button>
+    </div>
+  </div>
+</div>
+
+<!-- BACKUP / RESTORE DIALOG -->
+<div class="dlg-overlay" id="dlgBackup">
+  <div class="dlg-box" style="max-width:360px;">
+    <div class="dlg-title">データのバックアップ</div>
+    <div class="dlg-msg">
+      すべての企画データ（画像・コンテ絵を含む）を1つのファイルに書き出せます。<br>
+      アプリのバージョンが変わってもこのファイルから復元できます。
+    </div>
+    <button class="btn-primary" style="width:100%; margin-bottom:10px;" onclick="exportBackup()">📤 すべて書き出す（.json）</button>
+    <label class="btn-secondary" style="width:100%; display:block; text-align:center; box-sizing:border-box; cursor:pointer; margin-bottom:6px;">
+      📥 ファイルから読み込む
+      <input type="file" accept="application/json" id="backupFileInput" style="display:none" onchange="onBackupFileSelected(event)">
+    </label>
+    <div class="dlg-msg" style="margin-top:4px; font-size:11px;">
+      ※ 読み込み時に「追加」か「全部置き換え」を選べます
+    </div>
+    <div class="dlg-actions" style="margin-top:14px;">
+      <button class="btn-secondary" onclick="closeDlg('dlgBackup')">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<!-- IMPORT MODE DIALOG -->
+<div class="dlg-overlay" id="dlgImportMode">
+  <div class="dlg-box">
+    <div class="dlg-title">読み込み方法を選択</div>
+    <div class="dlg-msg" id="dlgImportModeMsg"></div>
+    <div class="dlg-actions" style="flex-direction:column; gap:8px;">
+      <button class="btn-primary" style="width:100%" onclick="doImportBackup('merge')">既存に追加する</button>
+      <button class="btn-secondary" style="width:100%; color:var(--red); border-color:var(--red);" onclick="doImportBackup('replace')">全部置き換える（既存は削除）</button>
+      <button class="btn-secondary" style="width:100%" onclick="closeDlg('dlgImportMode')">キャンセル</button>
     </div>
   </div>
 </div>
@@ -1481,10 +1519,108 @@ function updateMeta() {
 function escHtml(str) { return (str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function showToast(msg) { const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500); }
 
-['cutModal','dlgNewProject','dlgNewSeq','dlgConfirm','dlgMoveCut','dlgSelectScript'].forEach(id=>{
+['cutModal','dlgNewProject','dlgNewSeq','dlgConfirm','dlgMoveCut','dlgSelectScript','dlgBackup','dlgImportMode'].forEach(id=>{
   document.getElementById(id).addEventListener('click',e=>{if(e.target===document.getElementById(id)) closeDlg(id);});
 });
 document.getElementById('cutModal').addEventListener('click',e=>{if(e.target===document.getElementById('cutModal')) closeCutModal();});
+
+// ===== BACKUP / RESTORE =====
+const APP_DATA_VERSION = 1;
+let pendingImportData = null;
+
+function openBackupDlg() { openDlg('dlgBackup'); }
+
+function exportBackup() {
+  const payload = {
+    app: 'conte-app',
+    dataVersion: APP_DATA_VERSION,
+    exportedAt: new Date().toISOString(),
+    projects: projects
+  };
+  const json = JSON.stringify(payload, null, 2);
+  const blob = new Blob([json], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const dateStr = new Date().toISOString().slice(0,10);
+  a.href = url;
+  a.download = `conte_backup_${dateStr}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('バックアップを書き出しました');
+}
+
+function onBackupFileSelected(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      let importedProjects;
+      if (Array.isArray(data)) {
+        // 古い形式（配列そのまま）にも対応
+        importedProjects = data;
+      } else if (data && Array.isArray(data.projects)) {
+        importedProjects = data.projects;
+      } else {
+        showToast('このファイルは読み込めませんでした');
+        return;
+      }
+      // 最低限のバリデーション・補完
+      importedProjects = importedProjects.map(p => ({
+        id: p.id || ('p_'+Date.now()+'_'+Math.random().toString(36).slice(2,7)),
+        title: p.title || '',
+        type: p.type || '',
+        clientName: p.clientName || '',
+        songTitle: p.songTitle || '',
+        resolution: p.resolution || '',
+        fps: p.fps || '',
+        duration: p.duration || '',
+        concept: p.concept || '',
+        cast: p.cast || '',
+        location: p.location || '',
+        direction: p.direction || '',
+        deadline: p.deadline || '',
+        script: p.script || '',
+        cuts: p.cuts || [],
+        sequences: p.sequences || [],
+        updatedAt: p.updatedAt || Date.now()
+      }));
+      pendingImportData = importedProjects;
+      document.getElementById('dlgImportModeMsg').textContent =
+        `${importedProjects.length} 件の企画が見つかりました。どう取り込みますか？`;
+      closeDlg('dlgBackup');
+      openDlg('dlgImportMode');
+    } catch (err) {
+      showToast('ファイルの形式が正しくありません');
+    } finally {
+      e.target.value = '';
+    }
+  };
+  reader.readAsText(file);
+}
+
+function doImportBackup(mode) {
+  if (!pendingImportData) return;
+  if (mode === 'replace') {
+    projects = pendingImportData;
+  } else {
+    // 追加：ID重複を避けるため、既存と被るIDは振り直す
+    const existingIds = new Set(projects.map(p=>p.id));
+    pendingImportData.forEach(p => {
+      if (existingIds.has(p.id)) {
+        p.id = 'p_'+Date.now()+'_'+Math.random().toString(36).slice(2,7);
+      }
+      projects.push(p);
+    });
+  }
+  saveProjects();
+  renderProjectList();
+  closeDlg('dlgImportMode');
+  pendingImportData = null;
+  showToast(mode==='replace' ? '置き換えました' : '追加しました');
+}
+
 
 loadProjects(); renderProjectList();
 </script>
