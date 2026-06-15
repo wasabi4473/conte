@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>コンテ帳</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#1e1e1e">
@@ -49,7 +49,7 @@
 
   .tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--surface); padding: 0 16px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .tabs::-webkit-scrollbar { display: none; }
-  .tab { padding: 10px 14px; font-size: 12px; font-weight: 500; color: var(--text-dim); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.15s; white-space: nowrap; }
+  .tab { padding: 10px 14px; font-size: 12px; font-weight: 500; color: var(--text-dim); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.15s; white-space: nowrap; flex-shrink: 0; }
   .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
 
   .editor-main { padding: 16px; padding-bottom: 100px; }
@@ -64,6 +64,10 @@
   .type-selector { display: flex; gap: 6px; flex-wrap: wrap; }
   .type-chip { padding: 4px 10px; border-radius: 20px; font-size: 11px; border: 1px solid var(--border); color: var(--text-mid); background: transparent; cursor: pointer; font-family: var(--jp); transition: all 0.12s; }
   .type-chip.selected { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+
+  .time-input-wrap { display: flex; align-items: center; gap: 8px; background: var(--bg); border: 1px solid var(--border-light); border-radius: 7px; padding: 4px 8px; width: fit-content; }
+  .time-input { background: transparent; border: none; color: var(--text); font-family: var(--mono); font-size: 16px; width: 44px; text-align: right; outline: none; }
+  .time-label { font-size: 12px; color: var(--text-dim); }
 
   .cuts-panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; gap: 8px; }
   .cuts-count { font-size: 11px; color: var(--text-dim); font-family: var(--mono); }
@@ -93,16 +97,14 @@
   .cut-card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 6px; overflow: hidden; transition: border-color 0.15s; }
   .cut-card.editing { border-color: var(--accent); }
   .cut-card-header { display: flex; align-items: center; gap: 8px; padding: 9px 10px; cursor: pointer; user-select: none; }
-  .cut-num { font-family: var(--mono); font-size: 11px; font-weight: 700; color: var(--accent); background: var(--accent-dim); padding: 2px 6px; border-radius: 4px; flex-shrink: 0; }
-  
-  /* サムネイルと尺の表示枠 */
+  .cut-num { font-family: var(--mono); font-size: 14px; font-weight: 700; color: var(--accent); background: var(--accent-dim); padding: 4px 8px; border-radius: 4px; flex-shrink: 0; }
   .cut-thumb-wrap { position: relative; width: 80px; height: 50px; flex-shrink: 0; background: #fff; border: 1px solid var(--border); border-radius: 4px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
   .cut-thumb-wrap img { width: 100%; height: 100%; object-fit: contain; }
   .cut-time-overlay { position: absolute; bottom: 1px; right: 1px; background: rgba(0,0,0,0.7); color: #fff; font-size: 8px; padding: 1px 3px; border-radius: 2px; font-family: var(--mono); transform: scale(0.9); transform-origin: bottom right; white-space: nowrap; }
 
   .cut-summary { flex: 1; min-width: 0; }
-  .cut-title-preview { font-size: 12px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .cut-chips { display: flex; gap: 3px; margin-top: 2px; overflow: hidden; }
+  .cut-title-preview { font-size: 12px; font-weight: 400; color: var(--text-mid); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.4; }
+  .cut-chips { display: flex; gap: 3px; margin-top: 4px; overflow: hidden; }
   .mini-chip { font-size: 10px; color: var(--text-dim); background: var(--tag-bg); padding: 1px 5px; border-radius: 3px; white-space: nowrap; flex-shrink: 0; }
   .cut-actions { display: flex; gap: 2px; flex-shrink: 0; }
   .btn-sm { background: transparent; border: none; color: var(--text-dim); width: 26px; height: 26px; border-radius: 5px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 13px; transition: all 0.12s; }
@@ -124,13 +126,13 @@
   .edit-label { font-size: 10px; color: var(--text-dim); font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px; display: flex; align-items: center; gap: 6px; }
   .edit-label span { font-size: 14px; }
   .edit-input, .edit-textarea { background: var(--bg); border: 1px solid var(--border-light); border-radius: 7px; color: var(--text); font-family: var(--jp); font-size: 13px; padding: 9px 11px; width: 100%; outline: none; resize: none; transition: border-color 0.15s; }
+  select.edit-input { appearance: none; -webkit-appearance: none; text-align: center; }
   .edit-input:focus, .edit-textarea:focus { border-color: var(--accent); }
   .edit-input::placeholder, .edit-textarea::placeholder { color: var(--text-dim); }
   .camera-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
   .cam-chip { padding: 7px 8px; border-radius: 7px; font-size: 11px; border: 1px solid var(--border); color: var(--text-mid); background: transparent; cursor: pointer; font-family: var(--jp); text-align: center; transition: all 0.12s; line-height: 1.3; }
   .cam-chip.selected { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
 
-  /* image area */
   .img-area-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   .img-choice-btn { background: var(--bg); border: 1px solid var(--border-light); border-radius: 8px; padding: 14px 8px; text-align: center; cursor: pointer; color: var(--text-mid); font-size: 12px; font-family: var(--jp); transition: all 0.12s; }
   .img-choice-btn:hover { border-color: var(--accent); color: var(--accent); }
@@ -164,8 +166,9 @@
   .draw-bottom { display: flex; gap: 8px; padding: 10px 12px; background: var(--surface); border-top: 1px solid var(--border); }
   .draw-bottom button { flex: 1; }
 
-  /* ===== PREVIEW TABLE ===== */
-  .preview-doc { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 20px 16px; font-size: 13px; line-height: 1.8; overflow-x: auto; }
+  /* ===== PREVIEW & SCRIPT TABLE ===== */
+  .preview-wrapper { width: 100%; overflow: auto; border: 1px solid var(--border-light); border-radius: 8px; background: var(--card); }
+  .preview-scale-box { transform-origin: top left; transition: transform 0.1s; padding: 16px; }
   .preview-title { font-size: 20px; font-weight: 700; color: var(--accent); margin-bottom: 4px; font-family: var(--mono); }
   .preview-meta { font-size: 11px; color: var(--text-dim); font-family: var(--mono); margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
   .preview-info-block { margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
@@ -174,12 +177,8 @@
   .preview-seq-title { font-family: var(--mono); font-size: 12px; font-weight: 700; color: #c8c0ff; background: #2a2460; border-radius: 6px; padding: 5px 10px; margin: 16px 0 8px; display: inline-block; }
   
   .preview-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 11px; min-width: 600px; }
-  .preview-table th, .preview-table td { border: 1px solid var(--border-light); padding: 8px; vertical-align: top; }
-  .preview-table th { background: var(--surface); color: var(--text-dim); text-align: left; }
-  
-  /* プレビュー内の画像サムネイルも枠付きに */
-  .preview-cut-thumb-wrap { position: relative; width: 100%; max-width: 140px; aspect-ratio: 16/9; margin: 0 auto; background: #fff; border: 1px solid var(--border); border-radius: 4px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
-  .preview-cut-thumb-wrap img { width: 100%; height: 100%; object-fit: contain; }
+  .preview-table th, .preview-table td { border-left: 1px solid var(--border-light); border-right: 1px solid var(--border-light); border-top: none; border-bottom: none; padding: 8px; vertical-align: top; }
+  .preview-table th { background: var(--surface); color: var(--text-dim); text-align: left; border-bottom: 1px solid var(--border-light); }
   
   .offset-controls { display: flex; gap: 4px; margin-top: 8px; justify-content: flex-start; }
   .offset-controls.center { justify-content: center; }
@@ -207,6 +206,7 @@
 </head>
 <body>
 
+<!-- PROJECT LIST -->
 <div class="screen active" id="screen-list">
   <div class="sticky-header">
     <div class="logo">CONTE</div>
@@ -218,6 +218,7 @@
   </div>
 </div>
 
+<!-- EDITOR -->
 <div class="screen" id="screen-editor">
   <div class="editor-header">
     <button class="btn-back" onclick="goBack()">←</button>
@@ -231,8 +232,11 @@
     <div class="tab active" onclick="switchTab('info',this)">📋 企画情報</div>
     <div class="tab" onclick="switchTab('cuts',this)">🎬 カット</div>
     <div class="tab" onclick="switchTab('preview',this)">👁 プレビュー</div>
+    <!-- 新機能：原稿・尺確認タブ -->
+    <div class="tab" onclick="switchTab('script',this)">📜 原稿・尺確認</div>
   </div>
   <div class="editor-main">
+    <!-- INFO -->
     <div class="tab-panel active" id="tab-info">
       <div class="field-group">
         <div class="field-row">
@@ -281,6 +285,7 @@
       </div>
     </div>
 
+    <!-- CUTS -->
     <div class="tab-panel" id="tab-cuts">
       <div class="cuts-panel-header">
         <div class="cuts-count" id="cutsCount">0 カット</div>
@@ -288,27 +293,57 @@
           <button class="btn-add-seq" onclick="openAddSeq()">📁 シーケンス追加</button>
         </div>
       </div>
+      <!-- top-level cuts (ungrouped) -->
       <div class="top-cuts" id="topCuts"></div>
       <button class="btn-add-cut" onclick="openAddCutTopLevel()">＋ カットを追加</button>
+      <!-- sequences -->
       <div id="seqList"></div>
     </div>
 
+    <!-- PREVIEW -->
     <div class="tab-panel" id="tab-preview">
-      <div class="preview-doc" id="previewDoc"></div>
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px; background:var(--surface); padding:10px 14px; border-radius:8px; border:1px solid var(--border);">
+        <span style="font-size:12px; color:var(--text-dim);">🔍 ズーム表示</span>
+        <input type="range" min="0.4" max="1.5" step="0.05" value="1.0" style="flex:1;" oninput="changePreviewZoom(this.value)">
+      </div>
+      <div class="preview-wrapper">
+        <div class="preview-scale-box" id="previewScaleWrap">
+          <div id="previewDoc"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCRIPT (原稿・尺確認) -->
+    <div class="tab-panel" id="tab-script">
+      <div class="preview-wrapper" style="padding:16px;">
+        <div id="scriptDoc"></div>
+      </div>
     </div>
   </div>
 </div>
 
+<!-- FAB -->
 <button class="fab hidden" id="fab" onclick="openAddCutTopLevel()">＋</button>
 
+<!-- CUT MODAL -->
 <div class="modal-overlay" id="cutModal">
   <div class="modal">
     <div class="modal-handle"></div>
     <div class="modal-title" id="cutModalTitle">カットを追加</div>
     
+    <!-- 映像ブロック -->
     <div class="edit-section-title" style="color:var(--accent);">🎥 映像・画面指示</div>
-    <div class="edit-field"><div class="edit-label"><span>📝</span> カットタイトル</div><input class="edit-input" id="m_title" type="text" placeholder="例：主人公アップ、全景、振り向き…"></div>
-    <div class="edit-field"><div class="edit-label"><span>⏱</span> カットの尺 (分:秒:コマ)</div><input class="edit-input" id="m_durationStr" type="text" placeholder="例：00:03:15 / 03:15"></div>
+    <div class="edit-field">
+      <div class="edit-label"><span>⏱</span> カットの尺 (分:秒:コマ)</div>
+      <div style="display:flex; gap:8px; align-items:center; margin-top:4px;">
+        <select class="edit-input" id="m_durMin" style="width:60px; padding:8px 4px;"></select>
+        <span style="font-size:12px; color:var(--text-dim);">分</span>
+        <select class="edit-input" id="m_durSec" style="width:60px; padding:8px 4px;"></select>
+        <span style="font-size:12px; color:var(--text-dim);">秒</span>
+        <select class="edit-input" id="m_durFrame" style="width:60px; padding:8px 4px;"></select>
+        <span style="font-size:12px; color:var(--text-dim);">コマ</span>
+      </div>
+    </div>
     <div class="edit-field"><div class="edit-label"><span>📌</span> タイムコード等</div><input class="edit-input" id="m_timecode" type="text" placeholder="映像内の位置のメモなど"></div>
     
     <div class="edit-field">
@@ -353,9 +388,13 @@
     </div>
     <div class="edit-field"><div class="edit-label"><span>🎭</span> ト書き / 演技指示</div><textarea class="edit-input" id="m_action" rows="3" placeholder="動き、表情、照明、効果…"></textarea></div>
 
+    <!-- 音声ブロック -->
     <div class="edit-section-title" style="color:var(--green); margin-top:24px;">🔊 音響・セリフ</div>
     <div class="edit-field"><div class="edit-label"><span>🎙</span> ナレーション</div><textarea class="edit-input" id="m_a_narration" rows="2" placeholder="ナレーションテキスト…"></textarea></div>
+    <!-- 分離: セリフと歌詞 -->
     <div class="edit-field"><div class="edit-label"><span>💬</span> セリフ</div><textarea class="edit-input" id="m_a_dialogue" rows="2" placeholder="セリフテキスト…"></textarea></div>
+    <div class="edit-field"><div class="edit-label"><span>🎶</span> 歌詞</div><textarea class="edit-input" id="m_a_lyrics" rows="2" placeholder="歌詞テキスト…"></textarea></div>
+    
     <div class="edit-field"><div class="edit-label"><span>🎵</span> BGM</div><input class="edit-input" id="m_a_bgm" type="text" placeholder="BGMタイトルや指示…"></div>
     <div class="edit-field"><div class="edit-label"><span>💥</span> SE (効果音)</div><input class="edit-input" id="m_a_se" type="text" placeholder="効果音の指示…"></div>
     <div class="edit-field"><div class="edit-label"><span>🔔</span> SL (サウンドロゴ)</div><input class="edit-input" id="m_a_sl" type="text" placeholder="サウンドロゴ…"></div>
@@ -370,6 +409,7 @@
   </div>
 </div>
 
+<!-- DRAW MODAL -->
 <div class="draw-overlay" id="drawOverlay">
   <div class="draw-toolbar">
     <div class="color-swatch selected" style="background:#1a1a1a" onclick="setDrawColor('#1a1a1a',this)"></div>
@@ -397,6 +437,7 @@
   </div>
 </div>
 
+<!-- NEW PROJECT DIALOG -->
 <div class="dlg-overlay" id="dlgNewProject">
   <div class="dlg-box">
     <div class="dlg-title">企画名をつけよう</div>
@@ -409,6 +450,7 @@
   </div>
 </div>
 
+<!-- NEW SEQUENCE DIALOG -->
 <div class="dlg-overlay" id="dlgNewSeq">
   <div class="dlg-box">
     <div class="dlg-title">シーケンス名</div>
@@ -421,6 +463,7 @@
   </div>
 </div>
 
+<!-- CONFIRM DIALOG -->
 <div class="dlg-overlay" id="dlgConfirm">
   <div class="dlg-box">
     <div class="dlg-title" id="dlgConfirmTitle"></div>
@@ -432,6 +475,7 @@
   </div>
 </div>
 
+<!-- MOVE CUT DIALOG -->
 <div class="dlg-overlay" id="dlgMoveCut">
   <div class="dlg-box">
     <div class="dlg-title">カットの移動先</div>
@@ -453,6 +497,15 @@ if ('serviceWorker' in navigator) {
   });
 }
 
+// OSネイティブのドラムロール用セレクトボックスの初期化
+window.addEventListener('DOMContentLoaded', () => {
+  let opts60 = '';
+  for(let i=0; i<60; i++) opts60 += `<option value="${i}">${String(i).padStart(2,'0')}</option>`;
+  document.getElementById('m_durMin').innerHTML = opts60;
+  document.getElementById('m_durSec').innerHTML = opts60;
+  document.getElementById('m_durFrame').innerHTML = opts60;
+});
+
 const STORAGE_KEY = 'conte_v4';
 let projects = [];
 let currentProjectId = null;
@@ -470,18 +523,8 @@ function getFps() {
   if(!p || !p.fps) return 30; // デフォルトは30fps
   return parseFloat(p.fps) || 30;
 }
-function timecodeToFrames(tc, fps) {
-  if(!tc) return 0;
-  // 例: "00:03:15" -> [0, 3, 15]
-  const parts = tc.split(':').map(n => parseInt(n, 10) || 0);
-  if(parts.length >= 3) {
-    return (parts[parts.length-3] * 60 * fps) + (parts[parts.length-2] * fps) + parts[parts.length-1];
-  } else if(parts.length === 2) {
-    return (parts[0] * fps) + parts[1]; // 分:秒を想定している場合は注意だが、一般的には 秒:フレーム か 分:秒 か。ここでは秒:フレームとみなす
-  } else if(parts.length === 1) {
-    return parts[0];
-  }
-  return 0;
+function timecodeToFrames(m, s, f, fps) {
+  return (parseInt(m||0) * 60 * fps) + (parseInt(s||0) * fps) + parseInt(f||0);
 }
 function framesToTimecode(frames, fps) {
   if(frames <= 0) return "00:00:00";
@@ -491,13 +534,8 @@ function framesToTimecode(frames, fps) {
   const f = Math.floor(frames % fps);
   return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}:${String(f).padStart(2,'0')}`;
 }
-// すべてのカットの尺を再計算して紐付ける
-function calcDurations() {
-  const p = currentProject(); if(!p) return;
-  const fps = getFps();
-  let totalFrames = 0;
-  
-  // フラットな配列としてカットを取得
+
+function getAllCuts(p) {
   let ordered = [];
   if (p.cuts) ordered.push(...p.cuts);
   if (p.sequences) {
@@ -505,15 +543,22 @@ function calcDurations() {
       if (seq.cuts) ordered.push(...seq.cuts);
     });
   }
+  return ordered;
+}
+
+function calcDurations() {
+  const p = currentProject(); if(!p) return;
+  const fps = getFps();
+  let totalFrames = 0;
   
+  const ordered = getAllCuts(p);
   ordered.forEach(c => {
-    const f = timecodeToFrames(c.durationStr, fps);
+    const f = timecodeToFrames(c.durM, c.durS, c.durF, fps);
     totalFrames += f;
     c._frames = f;
     c._accumFrames = totalFrames;
   });
 }
-
 
 function saveProjects() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(projects)); } catch(e) {} }
 function loadProjects() {
@@ -527,20 +572,19 @@ function currentProject() { return projects.find(p => p.id === currentProjectId)
 
 function saveCurrentProject() {
   const p = currentProject(); if (!p) return;
-  p.title = document.getElementById('projectTitle').value;
   p.type = selectedType;
   p.clientName = document.getElementById('clientName').value; 
   p.songTitle = document.getElementById('songTitle').value;
   p.resolution = document.getElementById('resolution').value;
   p.fps = document.getElementById('fps').value;
-  p.duration = document.getElementById('duration').value; // テキストに戻した
+  p.duration = document.getElementById('duration').value;
   p.concept = document.getElementById('concept').value;
   p.cast = document.getElementById('cast').value;
   p.location = document.getElementById('location').value;
   p.direction = document.getElementById('direction').value;
   p.deadline = document.getElementById('deadline').value;
   p.updatedAt = Date.now();
-  saveProjects(); updateMeta();
+  saveProjects(); calcDurations(); updateMeta();
 }
 
 document.addEventListener('input', e => { if (e.target.closest('#screen-editor')) saveCurrentProject(); });
@@ -613,8 +657,10 @@ function showScreen(n) { document.querySelectorAll('.screen').forEach(s=>s.class
 function switchTab(tab, el) {
   document.querySelectorAll('.tabs .tab').forEach(t=>t.classList.remove('active')); el.classList.add('active');
   document.querySelectorAll('.tab-panel').forEach(t=>t.classList.remove('active')); document.getElementById('tab-'+tab).classList.add('active');
-  document.getElementById('fab').classList.toggle('hidden', tab!=='cuts');
+  document.getElementById('fab').classList.toggle('hidden', (tab!=='cuts'));
+  
   if (tab==='preview') buildPreview();
+  if (tab==='script') buildScriptView();
 }
 
 function selectType(el, val) {
@@ -634,7 +680,7 @@ function doAddSeq() {
   if (!title) { document.getElementById('dlgSeqTitle').focus(); return; }
   const p = currentProject(); if (!p) return;
   p.sequences.push({ id:'s_'+Date.now(), title, collapsed:false, cuts:[] });
-  saveProjects(); closeDlg('dlgNewSeq'); renderCuts(); updateMeta(); showToast('シーケンスを追加しました');
+  saveProjects(); closeDlg('dlgNewSeq'); calcDurations(); renderCuts(); updateMeta(); showToast('シーケンスを追加しました');
 }
 function deleteSeq(seqId) {
   const p = currentProject(); if (!p) return;
@@ -665,7 +711,13 @@ function openAddCut(loc) {
   editingCutLocation = loc; editingCutId = null;
   selectedCams = new Set(); selectedAngle = ''; currentImageData = null;
   document.getElementById('cutModalTitle').textContent = 'カットを追加';
-  ['m_title','m_durationStr','m_timecode','m_camera','m_a_narration','m_a_dialogue','m_a_bgm','m_a_se','m_a_sl','m_action','m_note'].forEach(id=>document.getElementById(id).value='');
+  
+  // フォームリセット
+  ['m_timecode','m_camera','m_a_narration','m_a_dialogue','m_a_lyrics','m_a_bgm','m_a_se','m_a_sl','m_action','m_note'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('m_durMin').value = '0';
+  document.getElementById('m_durSec').value = '0';
+  document.getElementById('m_durFrame').value = '0';
+  
   document.querySelectorAll('#cutModal .cam-chip').forEach(c=>c.classList.remove('selected'));
   clearImage();
   document.getElementById('cutModal').classList.add('open');
@@ -676,20 +728,26 @@ function openEditCut(loc, cutId) {
   const cut = arr.find(c=>c.id===cutId); if (!cut) return;
   editingCutLocation = loc; editingCutId = cutId;
   selectedCams = new Set(cut.cams||[]); selectedAngle = cut.angle||''; currentImageData = cut.image||null;
+  
   document.getElementById('cutModalTitle').textContent = 'カットを編集';
-  document.getElementById('m_title').value = cut.title||'';
-  document.getElementById('m_durationStr').value = cut.durationStr||'';
+  
+  document.getElementById('m_durMin').value = cut.durM || '0';
+  document.getElementById('m_durSec').value = cut.durS || '0';
+  document.getElementById('m_durFrame').value = cut.durF || '0';
+  
   document.getElementById('m_timecode').value = cut.timecode||'';
   document.getElementById('m_camera').value = cut.cameraNote||'';
   
   document.getElementById('m_a_narration').value = cut.audio?.narration || '';
   document.getElementById('m_a_dialogue').value = cut.audio?.dialogue || cut.dialogue || ''; 
+  document.getElementById('m_a_lyrics').value = cut.audio?.lyrics || ''; 
   document.getElementById('m_a_bgm').value = cut.audio?.bgm || '';
   document.getElementById('m_a_se').value = cut.audio?.se || '';
   document.getElementById('m_a_sl').value = cut.audio?.sl || '';
   
   document.getElementById('m_action').value = cut.action||'';
   document.getElementById('m_note').value = cut.note||'';
+  
   document.querySelectorAll('#camGrid .cam-chip').forEach(el=>{ const v=el.getAttribute('onclick').match(/'([^']+)'/)[1]; el.classList.toggle('selected',selectedCams.has(v)); });
   document.querySelectorAll('#angleGrid .cam-chip').forEach(el=>{ const v=el.getAttribute('onclick').match(/'([^']+)'/)[1]; el.classList.toggle('selected',v===selectedAngle); });
   if (currentImageData) { document.getElementById('m_img_preview').src=currentImageData; document.getElementById('imgPreviewWrap').classList.add('show'); } else clearImage();
@@ -698,8 +756,6 @@ function openEditCut(loc, cutId) {
 function closeCutModal() { document.getElementById('cutModal').classList.remove('open'); }
 
 function saveCut() {
-  let title = document.getElementById('m_title').value.trim();
-  if (!title) { title = '無題のカット'; }
   const p = currentProject(); if (!p) return;
   const arr = getCutArray(p, editingCutLocation); if (!arr) return;
   
@@ -712,6 +768,7 @@ function saveCut() {
   const audioData = {
     narration: document.getElementById('m_a_narration').value.trim(),
     dialogue: document.getElementById('m_a_dialogue').value.trim(),
+    lyrics: document.getElementById('m_a_lyrics').value.trim(),
     bgm: document.getElementById('m_a_bgm').value.trim(),
     se: document.getElementById('m_a_se').value.trim(),
     sl: document.getElementById('m_a_sl').value.trim(),
@@ -719,8 +776,9 @@ function saveCut() {
 
   const cut = { 
     id: editingCutId||'c_'+Date.now(), 
-    title, 
-    durationStr: document.getElementById('m_durationStr').value.trim(),
+    durM: document.getElementById('m_durMin').value,
+    durS: document.getElementById('m_durSec').value,
+    durF: document.getElementById('m_durFrame').value,
     timecode:document.getElementById('m_timecode').value.trim(), 
     cams:[...selectedCams], 
     angle:selectedAngle, 
@@ -738,7 +796,7 @@ function saveCut() {
   else arr.push(cut);
   
   saveProjects(); 
-  calcDurations(); // 新しく追加・更新されたので再計算
+  calcDurations(); 
   closeCutModal(); renderCuts(); updateMeta();
   showToast(editingCutId?'更新しました':'カットを追加しました');
 }
@@ -960,6 +1018,7 @@ function renderCutCard(cut, ci, loc) {
     const parts = [];
     if(cut.audio.narration) parts.push('NA');
     if(cut.audio.dialogue) parts.push('セリフ');
+    if(cut.audio.lyrics) parts.push('歌詞');
     if(cut.audio.bgm) parts.push('BGM');
     if(cut.audio.se) parts.push('SE');
     if(cut.audio.sl) parts.push('SL');
@@ -972,29 +1031,34 @@ function renderCutCard(cut, ci, loc) {
   const f_dur = framesToTimecode(cut._frames||0, fps);
   const f_accum = framesToTimecode(cut._accumFrames||0, fps);
 
+  // ト書きがなければ「（ト書きなし）」、あれば冒頭を表示してタイトルの代わりにする
+  const actionPreview = cut.action ? escHtml(cut.action.substring(0, 30)) + (cut.action.length>30?'...':'') : '<span style="color:#666">（ト書きなし）</span>';
+
   return `<div class="cut-card" id="cc-${cut.id}">
     <div class="cut-card-header" onclick="toggleCut('${cut.id}')">
       <div class="cut-num">C${String(ci+1).padStart(2,'0')}</div>
       
-      <div class="cut-thumb-wrap">
-        ${cut.image ? `<img src="${cut.image}" alt="">` : `<span style="color:#ddd; font-size:10px;">No Image</span>`}
-        <div class="cut-time-overlay">(${f_dur} / ${f_accum})</div>
+      <div style="display:flex; flex-direction:column; align-items:flex-end; flex-shrink:0;">
+        <div style="width:60px; height:40px; background:#fff; border:1px solid var(--border); border-radius:4px; overflow:hidden; display:flex; align-items:center; justify-content:center;">
+          ${cut.image ? `<img src="${cut.image}" style="width:100%;height:100%;object-fit:contain;" alt="">` : `<span style="color:#ddd; font-size:10px;">No Image</span>`}
+        </div>
+        <div style="font-size:9px; color:var(--text-dim); font-family:var(--mono); margin-top:4px;">(${f_dur} / ${f_accum})</div>
       </div>
       
-      <div class="cut-summary">
-        <div class="cut-title-preview">${escHtml(cut.title)}</div>
-        <div class="cut-chips">${chips.map(c=>`<div class="mini-chip">${escHtml(c)}</div>`).join('')}${audioSummary?'<div class="mini-chip">💬</div>':''}${cut.action?'<div class="mini-chip">🎭</div>':''}</div>
+      <div class="cut-summary" style="margin-left:8px;">
+        <div class="cut-title-preview" style="font-size:12px; font-weight:normal;">${actionPreview}</div>
+        <div class="cut-chips">${chips.map(c=>`<div class="mini-chip">${escHtml(c)}</div>`).join('')}${audioSummary?'<div class="mini-chip">💬</div>':''}</div>
       </div>
       <div class="cut-actions">
         <button class="btn-sm" onclick="event.stopPropagation();moveCut('${loc}','${cut.id}',-1)" ${ci===0?'style="opacity:0.3;pointer-events:none"':''}>↑</button>
         <button class="btn-sm" onclick="event.stopPropagation();moveCut('${loc}','${cut.id}',1)" ${ci===arr.length-1?'style="opacity:0.3;pointer-events:none"':''}>↓</button>
         <button class="btn-sm" onclick="event.stopPropagation();openMoveDialog('${loc}','${cut.id}')" title="移動">📁</button>
         <button class="btn-sm" onclick="event.stopPropagation();openEditCut('${loc}','${cut.id}')">✏️</button>
-        <button class="btn-sm danger" onclick="event.stopPropagation();confirmDelete('カットを削除しますか？','C${String(ci+1).padStart(2,'0')} 「${cut.title.replace(/'/g,"\\'")}」を削除します。',()=>deleteCut('${loc}','${cut.id}'))">🗑</button>
+        <button class="btn-sm danger" onclick="event.stopPropagation();confirmDelete('カットを削除しますか？','C${String(ci+1).padStart(2,'0')} を削除します。',()=>deleteCut('${loc}','${cut.id}'))">🗑</button>
       </div>
     </div>
     <div class="cut-detail" id="cd-${cut.id}">
-      ${detRow('尺 / タイム', `${escHtml(cut.durationStr||'--')} / ${escHtml(cut.timecode||'')}`)}
+      ${detRow('尺 / タイム', `${String(cut.durM||0).padStart(2,'0')}:${String(cut.durS||0).padStart(2,'0')}:${String(cut.durF||0).padStart(2,'0')} / ${escHtml(cut.timecode||'')}`)}
       ${detRow('カメラ',[...(cut.cams||[]),cut.angle,cut.cameraNote].filter(Boolean).join(' / '))}
       ${detRow('ト書き',cut.action)}
       <div style="border-top:1px dashed #444; margin-top:8px; padding-top:4px;"></div>
@@ -1033,7 +1097,7 @@ function renderCuts() {
   }).join('');
 }
 function detRow(label, val) {
-  if (!val || val === ' / ') return '';
+  if (!val || val === '00:00:00 / ' || val === ' / ') return '';
   return `<div style="display:grid;grid-template-columns:68px 1fr;gap:6px;margin-top:8px;font-size:11px;align-items:start;"><div style="color:var(--text-dim);font-family:var(--mono);font-size:10px;padding-top:2px;">${label}</div><div style="color:var(--text-mid);white-space:pre-wrap;word-break:break-word;">${escHtml(val)}</div></div>`;
 }
 function toggleCut(cutId) {
@@ -1042,6 +1106,12 @@ function toggleCut(cutId) {
 }
 
 // ===== PREVIEW & PDF OFFSET =====
+function changePreviewZoom(val) {
+  const wrap = document.getElementById('previewScaleWrap');
+  wrap.style.transform = `scale(${val})`;
+  wrap.style.width = `${100 / val}%`;
+}
+
 function findCutById(cutId) {
   const p = currentProject(); if(!p) return null;
   let cut = p.cuts.find(c=>c.id===cutId); if(cut) return cut;
@@ -1052,7 +1122,7 @@ function findCutById(cutId) {
 function changeOffset(cutId, type, delta) {
   const cut = findCutById(cutId); if(!cut) return;
   if(type==='v') { cut.videoOffset = Math.max(0, (cut.videoOffset||0)+delta); }
-  if(type==='img') { cut.imageOffset = Math.max(0, (cut.imageOffset||0)+delta); } // 追加
+  if(type==='img') { cut.imageOffset = Math.max(0, (cut.imageOffset||0)+delta); }
   if(type==='a') { cut.audioOffset = Math.max(0, (cut.audioOffset||0)+delta); }
   saveProjects(); buildPreview();
 }
@@ -1060,7 +1130,7 @@ function changeOffset(cutId, type, delta) {
 function buildPreview() {
   const p = currentProject(); if (!p) return;
   const now = new Date().toLocaleDateString('ja-JP');
-  let html = `<div class="preview-title">${escHtml(p.title||'（タイトル未入力）')}</div>`;
+  let html = `<div class="preview-title">プレビュー</div>`;
   html += `<div class="preview-meta">作成日：${now} · カット ${countCuts(p)}</div>`;
   
   const fpsStr = p.fps ? `${p.fps} fps` : '';
@@ -1073,10 +1143,10 @@ function buildPreview() {
   if (countCuts(p)===0) {
     html += `<div style="color:var(--text-dim);font-size:13px;text-align:center;padding:20px 0;">カットがまだありません</div>`;
   } else {
-    html += `<table class="preview-table"><tr><th style="width:30%">ト書き / 画面指示</th><th style="width:40%">画面</th><th style="width:30%">音声 / セリフ</th></tr>`;
+    html += `<table class="preview-table"><tr><th style="width:30%">ト書き / 画面指示</th><th style="width:40%; text-align:center;">画面</th><th style="width:30%">音声 / セリフ / 歌詞</th></tr>`;
     (p.cuts||[]).forEach((cut,ci)=>{ html += renderPreviewCutRow(cut, ci); });
     (p.sequences||[]).forEach(seq => {
-      html += `<tr><td colspan="3"><div class="preview-seq-title">▶ ${escHtml(seq.title)}</div></td></tr>`;
+      html += `<tr><td colspan="3" style="border-top:1px solid #444;"><div class="preview-seq-title">▶ ${escHtml(seq.title)}</div></td></tr>`;
       seq.cuts.forEach((cut,ci)=>{ html += renderPreviewCutRow(cut, ci); });
     });
     html += `</table>`;
@@ -1086,12 +1156,12 @@ function buildPreview() {
 
 function renderPreviewCutRow(cut, ci, isPdf = false) {
   const vOff = cut.videoOffset || 0;
-  const imgOff = cut.imageOffset || 0; // 追加
+  const imgOff = cut.imageOffset || 0; 
   const aOff = cut.audioOffset || 0;
   
-  const vMargin = vOff * 15; 
-  const imgMargin = imgOff * 15; // 追加
-  const aMargin = aOff * 15;
+  const vMargin = vOff * 25; 
+  const imgMargin = imgOff * 25; 
+  const aMargin = aOff * 25;
   
   const fps = getFps();
   const f_dur = framesToTimecode(cut._frames||0, fps);
@@ -1099,27 +1169,27 @@ function renderPreviewCutRow(cut, ci, isPdf = false) {
 
   const cam = [...(cut.cams||[]),cut.angle,cut.cameraNote].filter(Boolean).join(' / ');
   
-  // 画ブロックの内容生成
-  let vHtmlInner = `<div style="font-weight:bold; color:${isPdf?'#333':'var(--accent)'}; margin-bottom:4px;">C${String(ci+1).padStart(2,'0')} ${escHtml(cut.title)}</div>`;
+  let vHtmlInner = `<div style="font-weight:bold; color:${isPdf?'#333':'var(--accent)'}; margin-bottom:4px;">C${String(ci+1).padStart(2,'0')}</div>`;
   if (cut.timecode) vHtmlInner += `<div style="font-size:10px; color:#888;">TIME: ${escHtml(cut.timecode)}</div>`;
   if (cam) vHtmlInner += `<div style="font-size:10px; color:#888;">CAM: ${escHtml(cam)}</div>`;
   if (cut.action) vHtmlInner += `<div style="margin-top:6px; white-space:pre-wrap;">${escHtml(cut.action)}</div>`;
 
-  // 絵ブロックの内容生成 (尺表示枠込み)
   let imgHtmlInner = `
-    <div class="preview-cut-thumb-wrap">
-      ${cut.image ? `<img src="${cut.image}" alt="">` : `<span style="color:#ddd; font-size:14px;">No Image</span>`}
-      <div style="position:absolute; bottom:2px; right:2px; background:rgba(0,0,0,0.6); color:#fff; font-size:9px; padding:2px 4px; border-radius:3px;">
+    <div style="display:flex; justify-content:center;">
+      <div style="width:100%; max-width:160px; aspect-ratio:16/9; background:#fff; border:1px solid var(--border); border-radius:4px; overflow:hidden; display:flex; align-items:center; justify-content:center;">
+        ${cut.image ? `<img src="${cut.image}" style="width:100%;height:100%;object-fit:contain;" alt="">` : `<span style="color:#ddd; font-size:14px;">No Image</span>`}
+      </div>
+      <div style="font-size:10px; color:var(--text-mid); font-family:var(--mono); display:flex; align-items:flex-end; padding-left:4px; padding-bottom:2px; white-space:nowrap;">
         (${f_dur} / ${f_accum})
       </div>
     </div>
   `;
 
-  // 音ブロックの内容生成
   let aHtmlInner = '';
   if (cut.audio) {
     if(cut.audio.narration) aHtmlInner += `<div style="margin-bottom:6px;"><b>[NA]</b><br>${escHtml(cut.audio.narration)}</div>`;
     if(cut.audio.dialogue) aHtmlInner += `<div style="margin-bottom:6px;"><b>[セリフ]</b><br>${escHtml(cut.audio.dialogue)}</div>`;
+    if(cut.audio.lyrics) aHtmlInner += `<div style="margin-bottom:6px;"><b>[歌詞]</b><br>${escHtml(cut.audio.lyrics)}</div>`;
     if(cut.audio.bgm) aHtmlInner += `<div style="margin-bottom:4px;"><b>[BGM]</b> ${escHtml(cut.audio.bgm)}</div>`;
     if(cut.audio.se) aHtmlInner += `<div style="margin-bottom:4px;"><b>[SE]</b> ${escHtml(cut.audio.se)}</div>`;
     if(cut.audio.sl) aHtmlInner += `<div style="margin-bottom:4px;"><b>[SL]</b> ${escHtml(cut.audio.sl)}</div>`;
@@ -1128,27 +1198,97 @@ function renderPreviewCutRow(cut, ci, isPdf = false) {
   }
   if (cut.note) aHtmlInner += `<div style="margin-top:6px; font-size:10px; color:#888; white-space:pre-wrap;">メモ: ${escHtml(cut.note)}</div>`;
 
+  const topBorder = ci === 0 ? '' : (isPdf ? 'border-top:1px solid #333;' : 'border-top:1px solid var(--border-light);');
+
   let html = `<tr>
-    <td>
-      <div style="margin-top:${vMargin}px">
+    <td style="${topBorder}">
+      <div style="position:relative; top:${vMargin}px; z-index:10; padding-bottom:20px;">
         ${vHtmlInner}
         ${!isPdf ? `<div class="offset-controls"><button class="btn-offset" onclick="changeOffset('${cut.id}','v',1)">画↓</button><button class="btn-offset" onclick="changeOffset('${cut.id}','v',-1)" ${vOff<=0?'disabled':''}>画↑</button></div>` : ''}
       </div>
     </td>
-    <td style="text-align:center; vertical-align:top;">
-      <div style="margin-top:${imgMargin}px">
+    <td style="text-align:center; vertical-align:top; ${topBorder}">
+      <div style="position:relative; top:${imgMargin}px; z-index:10; display:inline-block; width:100%; max-width:240px; padding-bottom:20px;">
         ${imgHtmlInner}
         ${!isPdf ? `<div class="offset-controls center"><button class="btn-offset" onclick="changeOffset('${cut.id}','img',1)">絵↓</button><button class="btn-offset" onclick="changeOffset('${cut.id}','img',-1)" ${imgOff<=0?'disabled':''}>絵↑</button></div>` : ''}
       </div>
     </td>
-    <td>
-      <div style="margin-top:${aMargin}px">
+    <td style="${topBorder}">
+      <div style="position:relative; top:${aMargin}px; z-index:10; padding-bottom:20px;">
         ${aHtmlInner}
         ${!isPdf && aHtmlInner ? `<div class="offset-controls"><button class="btn-offset" onclick="changeOffset('${cut.id}','a',1)">音↓</button><button class="btn-offset" onclick="changeOffset('${cut.id}','a',-1)" ${aOff<=0?'disabled':''}>音↑</button></div>` : ''}
       </div>
     </td>
   </tr>`;
   return html;
+}
+
+// ===== SCRIPT VIEW (新機能: 原稿・尺確認) =====
+function buildScriptView() {
+  const p = currentProject(); if (!p) return;
+  let totalChars = 0;
+  let html = `<div class="preview-title" style="margin-bottom:16px;">原稿・尺確認</div>`;
+
+  let scriptLines = [];
+  const cuts = getAllCuts(p);
+  
+  cuts.forEach((cut, ci) => {
+    let text = '';
+    if(cut.audio) {
+      if(cut.audio.narration) text += `【NA】\n${cut.audio.narration}\n\n`;
+      if(cut.audio.dialogue) text += `【セリフ】\n${cut.audio.dialogue}\n\n`;
+      if(cut.audio.lyrics) text += `【歌詞】\n${cut.audio.lyrics}\n\n`;
+    } else if (cut.dialogue) {
+      text += `【セリフ】\n${cut.dialogue}\n\n`;
+    }
+    
+    if (text.trim()) {
+      // カッコや空白を除外して純粋な文字数をカウント
+      const rawText = text.replace(/【.*?】/g, '').replace(/\s+/g, '');
+      totalChars += rawText.length;
+      
+      scriptLines.push(`
+        <div style="display:flex; gap:12px; margin-bottom:16px; border-bottom:1px dashed var(--border-light); padding-bottom:16px;">
+          <div style="color:var(--accent); font-family:var(--mono); font-weight:bold; width:36px; flex-shrink:0; font-size:14px;">C${String(ci+1).padStart(2,'0')}</div>
+          <div style="flex:1; white-space:pre-wrap; line-height:1.7; color:var(--text); font-size:13px;">${escHtml(text.trim())}</div>
+          <div style="width:70px; text-align:right; font-family:var(--mono); font-size:10px; color:var(--text-dim); flex-shrink:0;">
+            尺: ${framesToTimecode(cut._frames, getFps())}<br>
+            累計: ${framesToTimecode(cut._accumFrames, getFps())}
+          </div>
+        </div>
+      `);
+    }
+  });
+
+  const fps = getFps();
+  const totalDurFrames = cuts.length > 0 ? cuts[cuts.length-1]._accumFrames : 0;
+  const totalDurStr = framesToTimecode(totalDurFrames, fps);
+  
+  // 目安尺の計算: 1秒あたり約5文字
+  const estSec = totalChars / 5;
+  const estDurStr = framesToTimecode(estSec * fps, fps);
+
+  html += `
+    <div style="background:var(--card-hover); padding:16px; border-radius:8px; margin-bottom:24px; border:1px solid var(--border);">
+      <div style="display:flex; justify-content:space-between; margin-bottom:10px; border-bottom:1px solid var(--border); padding-bottom:10px;">
+        <span style="color:var(--text-mid);">音声の総文字数</span>
+        <span style="font-weight:bold; font-size:16px; color:var(--text);">${totalChars} 文字</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; margin-bottom:10px; border-bottom:1px solid var(--border); padding-bottom:10px;">
+        <span style="color:var(--text-mid);">読むのに必要な目安尺 <span style="font-size:10px;">(約5文字/秒)</span></span>
+        <span style="font-weight:bold; font-size:16px; color:var(--accent);">${estDurStr}</span>
+      </div>
+      <div style="display:flex; justify-content:space-between;">
+        <span style="color:var(--text-mid);">現在のカット割り総尺</span>
+        <span style="font-weight:bold; font-size:16px; color:var(--text);">${totalDurStr}</span>
+      </div>
+    </div>
+  `;
+
+  html += `<div>${scriptLines.join('')}</div>`;
+  if(scriptLines.length === 0) html += `<div style="text-align:center; color:var(--text-dim); padding:20px;">音声・セリフの原稿がありません</div>`;
+
+  document.getElementById('scriptDoc').innerHTML = html;
 }
 
 // ===== EXPORT =====
@@ -1163,7 +1303,7 @@ function exportDoc() {
   let tableHtml = `<table class="pdf-table"><tr><th style="width:30%">ト書き / 画面指示</th><th style="width:40%">画面</th><th style="width:30%">音声 / セリフ</th></tr>`;
   (p.cuts||[]).forEach((cut,ci)=>{ tableHtml += renderPreviewCutRow(cut, ci, true); });
   (p.sequences||[]).forEach(seq=>{
-    tableHtml += `<tr><td colspan="3"><div class="seq-label-print">▶ ${esc(seq.title)}</div></td></tr>`;
+    tableHtml += `<tr><td colspan="3" style="padding:0;"><div class="seq-label-print">▶ ${esc(seq.title)}</div></td></tr>`;
     seq.cuts.forEach((cut,ci)=>{ tableHtml += renderPreviewCutRow(cut, ci, true); });
   });
   tableHtml += `</table>`;
@@ -1178,17 +1318,13 @@ h1{font-size:22px;font-weight:800;margin:0 0 4px;}
 .info-table td{padding:4px 8px;vertical-align:top;font-size:12px;border-bottom:1px solid #f0f0f0;}
 .info-table td.key{width:80px;color:#888;font-family:monospace;font-size:10px;white-space:nowrap;}
 .pdf-table{width:100%;border-collapse:collapse;table-layout:fixed;}
-.pdf-table th, .pdf-table td{border:1px solid #333;padding:10px;vertical-align:top;word-wrap:break-word;}
-.pdf-table th{background:#f0f0f0;font-size:11px;text-align:center;}
-
-.preview-cut-thumb-wrap { position: relative; width: 100%; max-width: 200px; aspect-ratio: 16/9; margin: 0 auto; background: #fff; border: 1px solid #ccc; border-radius: 4px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
-.preview-cut-thumb-wrap img { width: 100%; height: 100%; object-fit: contain; }
-
-.seq-label-print{font-weight:700;font-size:12px;color:#111;background:#e0e0e0;padding:4px 10px;display:inline-block;}
+.pdf-table th, .pdf-table td{border-left:1px solid #333; border-right:1px solid #333; border-top:none; border-bottom:none; padding:10px;vertical-align:top;word-wrap:break-word;}
+.pdf-table th{background:#f0f0f0;font-size:11px;text-align:center; border-bottom:1px solid #333;}
+.seq-label-print{font-weight:700;font-size:12px;color:#111;background:#e0e0e0;padding:4px 10px;display:inline-block; margin-top:10px;}
 @media print{body{padding:0;} .pdf-table {page-break-inside:auto;} tr {page-break-inside:avoid; page-break-after:auto;}}
 </style></head><body>
 <h1>${esc(p.title||'企画書')}</h1>
-<div class="meta">作成日：${now}　カット ${countCuts(p)}</div>
+<div class="meta">作成日：${now} カット ${countCuts(p)}</div>
 ${infoRows?`<div class="section-title">企画情報</div><table class="info-table">${infoRows}</table>`:''}
 <div class="section-title">絵コンテ</div>
 ${countCuts(p)>0 ? tableHtml : '<p style="color:#aaa;font-size:12px">カットなし</p>'}
