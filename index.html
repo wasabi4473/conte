@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>コンテ帳</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#1e1e1e">
@@ -65,10 +65,6 @@
   .type-chip { padding: 4px 10px; border-radius: 20px; font-size: 11px; border: 1px solid var(--border); color: var(--text-mid); background: transparent; cursor: pointer; font-family: var(--jp); transition: all 0.12s; }
   .type-chip.selected { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
 
-  .time-input-wrap { display: flex; align-items: center; gap: 8px; background: var(--bg); border: 1px solid var(--border-light); border-radius: 7px; padding: 4px 8px; width: fit-content; }
-  .time-input { background: transparent; border: none; color: var(--text); font-family: var(--mono); font-size: 16px; width: 44px; text-align: right; outline: none; }
-  .time-label { font-size: 12px; color: var(--text-dim); }
-
   .cuts-panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; gap: 8px; }
   .cuts-count { font-size: 11px; color: var(--text-dim); font-family: var(--mono); }
   .header-btns { display: flex; gap: 6px; }
@@ -98,10 +94,7 @@
   .cut-card.editing { border-color: var(--accent); }
   .cut-card-header { display: flex; align-items: center; gap: 8px; padding: 9px 10px; cursor: pointer; user-select: none; }
   .cut-num { font-family: var(--mono); font-size: 14px; font-weight: 700; color: var(--accent); background: var(--accent-dim); padding: 4px 8px; border-radius: 4px; flex-shrink: 0; }
-  .cut-thumb-wrap { position: relative; width: 80px; height: 50px; flex-shrink: 0; background: #fff; border: 1px solid var(--border); border-radius: 4px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
-  .cut-thumb-wrap img { width: 100%; height: 100%; object-fit: contain; }
-  .cut-time-overlay { position: absolute; bottom: 1px; right: 1px; background: rgba(0,0,0,0.7); color: #fff; font-size: 8px; padding: 1px 3px; border-radius: 2px; font-family: var(--mono); transform: scale(0.9); transform-origin: bottom right; white-space: nowrap; }
-
+  
   .cut-summary { flex: 1; min-width: 0; }
   .cut-title-preview { font-size: 12px; font-weight: 400; color: var(--text-mid); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.4; }
   .cut-chips { display: flex; gap: 3px; margin-top: 4px; overflow: hidden; }
@@ -120,7 +113,7 @@
   .modal-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 16px; }
   .modal-title { font-size: 15px; font-weight: 700; color: var(--accent); margin-bottom: 16px; font-family: var(--mono); }
   
-  .edit-section-title { font-size: 12px; font-weight: bold; border-bottom: 1px solid var(--border); padding-bottom: 4px; margin: 20px 0 10px; }
+  .edit-section-title { font-size: 12px; font-weight: bold; border-bottom: 1px solid var(--border); padding-bottom: 4px; margin: 20px 0 10px; display: flex; justify-content: space-between; align-items: flex-end; }
   
   .edit-field { margin-top: 12px; }
   .edit-label { font-size: 10px; color: var(--text-dim); font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px; display: flex; align-items: center; gap: 6px; }
@@ -156,7 +149,6 @@
   .draw-toolbar { display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: var(--surface); border-bottom: 1px solid var(--border); flex-wrap: wrap; }
   .draw-canvas-wrap { flex: 1; position: relative; background: #f0f0f0; overflow: hidden; touch-action: none; display: flex; align-items: center; justify-content: center; }
   #drawCanvas { touch-action: none; background: #fff; max-width: 100%; max-height: 100%; box-shadow: 0 0 10px rgba(0,0,0,0.5); object-fit: contain; }
-  
   .color-swatch { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--border-light); cursor: pointer; flex-shrink: 0; }
   .color-swatch.selected { border-color: var(--accent); }
   .draw-btn { background: var(--card); border: 1px solid var(--border); color: var(--text-mid); border-radius: 7px; padding: 7px 10px; font-size: 12px; cursor: pointer; font-family: var(--jp); flex-shrink: 0; }
@@ -186,6 +178,16 @@
   .btn-offset:hover { background: var(--border-light); color: var(--text); }
   .btn-offset:disabled { opacity: 0.3; pointer-events: none; }
 
+  /* SCRIPT CARD */
+  .script-card { background: var(--bg); border: 1px solid var(--border-light); border-radius: 8px; padding: 12px; margin-bottom: 8px; display: flex; flex-direction: column; gap: 8px; }
+  .script-card-text { font-size: 13px; color: var(--text); line-height: 1.6; white-space: pre-wrap; }
+  .script-card-actions { display: flex; justify-content: flex-end; }
+  .script-btn { background: var(--surface); border: 1px solid var(--border); color: var(--text-mid); border-radius: 4px; padding: 6px 12px; font-size: 11px; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: all 0.15s; }
+  .script-btn:hover { border-color: var(--accent); color: var(--accent); }
+  
+  .script-pull-btn { background: var(--bg); border: 1px solid var(--border-light); color: var(--text-mid); padding: 4px 8px; border-radius: 4px; font-size: 10px; cursor: pointer; transition: 0.15s; }
+  .script-pull-btn:hover { border-color: var(--accent); color: var(--accent); }
+
   .fab { position: fixed; bottom: 24px; right: 20px; z-index: 200; background: var(--accent); color: #141414; border: none; width: 52px; height: 52px; border-radius: 50%; font-size: 24px; cursor: pointer; box-shadow: 0 4px 20px rgba(232,200,64,0.35); display: flex; align-items: center; justify-content: center; transition: transform 0.15s; }
   .fab:hover { transform: scale(1.07); }
   .fab.hidden { display: none; }
@@ -195,17 +197,18 @@
 
   .dlg-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 400; align-items: center; justify-content: center; padding: 20px; }
   .dlg-overlay.open { display: flex; }
-  .dlg-box { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 24px 20px; width: 100%; max-width: 320px; }
+  .dlg-box { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 24px 20px; width: 100%; max-width: 320px; max-height: 80vh; overflow-y: auto; }
   .dlg-title { font-size: 15px; font-weight: 700; margin-bottom: 8px; }
   .dlg-msg { font-size: 13px; color: var(--text-mid); line-height: 1.6; margin-bottom: 16px; }
   .dlg-input { background: var(--bg); border: 1px solid var(--border-light); border-radius: 7px; color: var(--text); font-family: var(--jp); font-size: 14px; padding: 10px 12px; width: 100%; outline: none; margin-bottom: 16px; }
   .dlg-input:focus { border-color: var(--accent); }
-  .dlg-actions { display: flex; gap: 8px; }
+  .dlg-actions { display: flex; gap: 8px; margin-top: 16px; }
   .dlg-select { background: var(--bg); border: 1px solid var(--border-light); border-radius: 7px; color: var(--text); font-family: var(--jp); font-size: 14px; padding: 10px 12px; width: 100%; outline: none; margin-bottom: 16px; }
 </style>
 </head>
 <body>
 
+<!-- PROJECT LIST -->
 <div class="screen active" id="screen-list">
   <div class="sticky-header">
     <div class="logo">CONTE</div>
@@ -217,6 +220,7 @@
   </div>
 </div>
 
+<!-- EDITOR -->
 <div class="screen" id="screen-editor">
   <div class="editor-header">
     <button class="btn-back" onclick="goBack()">←</button>
@@ -233,6 +237,7 @@
     <div class="tab" onclick="switchTab('script',this)">📜 原稿・尺確認</div>
   </div>
   <div class="editor-main">
+    <!-- INFO -->
     <div class="tab-panel active" id="tab-info">
       <div class="field-group">
         <div class="field-row">
@@ -281,6 +286,7 @@
       </div>
     </div>
 
+    <!-- CUTS -->
     <div class="tab-panel" id="tab-cuts">
       <div class="cuts-panel-header">
         <div class="cuts-count" id="cutsCount">0 カット</div>
@@ -293,6 +299,7 @@
       <div id="seqList"></div>
     </div>
 
+    <!-- PREVIEW -->
     <div class="tab-panel" id="tab-preview">
       <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px; background:var(--surface); padding:10px 14px; border-radius:8px; border:1px solid var(--border);">
         <span style="font-size:12px; color:var(--text-dim);">🔍 ズーム表示</span>
@@ -305,21 +312,30 @@
       </div>
     </div>
 
+    <!-- SCRIPT (原稿・尺確認) -->
     <div class="tab-panel" id="tab-script">
-      <div class="preview-wrapper" style="padding:16px;">
-        <div id="scriptDoc"></div>
+      <div class="field-group">
+        <div class="field-row">
+          <div class="field-label">原稿のベタ貼り（ストック）</div>
+          <textarea class="field-textarea" id="globalScriptInput" rows="8" placeholder="ここにナレーションやセリフ、歌詞の原稿をベタ貼りしてください。改行ごとに自動で分割されて下にカード化されます。" oninput="updateScriptStats()"></textarea>
+        </div>
       </div>
+      <div id="scriptStatsArea"></div>
+      <div id="scriptCardsArea" style="margin-top:20px;"></div>
     </div>
   </div>
 </div>
 
+<!-- FAB -->
 <button class="fab hidden" id="fab" onclick="openAddCutTopLevel()">＋</button>
 
+<!-- CUT MODAL -->
 <div class="modal-overlay" id="cutModal">
   <div class="modal">
     <div class="modal-handle"></div>
     <div class="modal-title" id="cutModalTitle">カットを追加</div>
     
+    <!-- 映像ブロック -->
     <div class="edit-section-title" style="color:var(--accent);">🎥 映像・画面指示</div>
     <div class="edit-field">
       <div class="edit-label"><span>⏱</span> カットの尺 (分:秒:コマ)</div>
@@ -376,10 +392,23 @@
     </div>
     <div class="edit-field"><div class="edit-label"><span>🎭</span> ト書き / 演技指示</div><textarea class="edit-input" id="m_action" rows="3" placeholder="動き、表情、照明、効果…"></textarea></div>
 
-    <div class="edit-section-title" style="color:var(--green); margin-top:24px;">🔊 音響・セリフ</div>
-    <div class="edit-field"><div class="edit-label"><span>🎙</span> ナレーション</div><textarea class="edit-input" id="m_a_narration" rows="2" placeholder="ナレーションテキスト…"></textarea></div>
-    <div class="edit-field"><div class="edit-label"><span>💬</span> セリフ</div><textarea class="edit-input" id="m_a_dialogue" rows="2" placeholder="セリフテキスト…"></textarea></div>
-    <div class="edit-field"><div class="edit-label"><span>🎶</span> 歌詞</div><textarea class="edit-input" id="m_a_lyrics" rows="2" placeholder="歌詞テキスト…"></textarea></div>
+    <!-- 音声ブロック -->
+    <div class="edit-section-title" style="color:var(--green); margin-top:24px;">
+      🔊 音響・セリフ
+    </div>
+    <div class="edit-field">
+      <div class="edit-label"><span>🎙</span> ナレーション <button class="script-pull-btn" onclick="openScriptSelector('m_a_narration')">📜 原稿から引く</button></div>
+      <textarea class="edit-input" id="m_a_narration" rows="2" placeholder="ナレーションテキスト…"></textarea>
+    </div>
+    <div class="edit-field">
+      <div class="edit-label"><span>💬</span> セリフ <button class="script-pull-btn" onclick="openScriptSelector('m_a_dialogue')">📜 原稿から引く</button></div>
+      <textarea class="edit-input" id="m_a_dialogue" rows="2" placeholder="セリフテキスト…"></textarea>
+    </div>
+    <div class="edit-field">
+      <div class="edit-label"><span>🎶</span> 歌詞 <button class="script-pull-btn" onclick="openScriptSelector('m_a_lyrics')">📜 原稿から引く</button></div>
+      <textarea class="edit-input" id="m_a_lyrics" rows="2" placeholder="歌詞テキスト…"></textarea>
+    </div>
+    
     <div class="edit-field"><div class="edit-label"><span>🎵</span> BGM</div><input class="edit-input" id="m_a_bgm" type="text" placeholder="BGMタイトルや指示…"></div>
     <div class="edit-field"><div class="edit-label"><span>💥</span> SE (効果音)</div><input class="edit-input" id="m_a_se" type="text" placeholder="効果音の指示…"></div>
     <div class="edit-field"><div class="edit-label"><span>🔔</span> SL (サウンドロゴ)</div><input class="edit-input" id="m_a_sl" type="text" placeholder="サウンドロゴ…"></div>
@@ -394,6 +423,7 @@
   </div>
 </div>
 
+<!-- DRAW MODAL -->
 <div class="draw-overlay" id="drawOverlay">
   <div class="draw-toolbar">
     <div class="color-swatch selected" style="background:#1a1a1a" onclick="setDrawColor('#1a1a1a',this)"></div>
@@ -421,6 +451,19 @@
   </div>
 </div>
 
+<!-- SELECT SCRIPT DIALOG (原稿から引用) -->
+<div class="dlg-overlay" id="dlgSelectScript">
+  <div class="dlg-box">
+    <div class="dlg-title">原稿を選択</div>
+    <div class="dlg-msg">タップした文章を入力欄に挿入します。</div>
+    <div id="dlgScriptList" style="max-height: 40vh; overflow-y: auto; margin-bottom: 16px; border-top: 1px solid var(--border-light); padding-top: 8px;"></div>
+    <div class="dlg-actions">
+      <button class="btn-secondary" style="width:100%" onclick="closeDlg('dlgSelectScript')">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<!-- NEW PROJECT DIALOG -->
 <div class="dlg-overlay" id="dlgNewProject">
   <div class="dlg-box">
     <div class="dlg-title">企画名をつけよう</div>
@@ -433,6 +476,7 @@
   </div>
 </div>
 
+<!-- NEW SEQUENCE DIALOG -->
 <div class="dlg-overlay" id="dlgNewSeq">
   <div class="dlg-box">
     <div class="dlg-title">シーケンス名</div>
@@ -445,6 +489,7 @@
   </div>
 </div>
 
+<!-- CONFIRM DIALOG -->
 <div class="dlg-overlay" id="dlgConfirm">
   <div class="dlg-box">
     <div class="dlg-title" id="dlgConfirmTitle"></div>
@@ -456,6 +501,7 @@
   </div>
 </div>
 
+<!-- MOVE CUT DIALOG -->
 <div class="dlg-overlay" id="dlgMoveCut">
   <div class="dlg-box">
     <div class="dlg-title">カットの移動先</div>
@@ -470,14 +516,12 @@
 <div class="toast" id="toast"></div>
 
 <script>
-// PWA Service Worker Registration
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js').catch(()=>{});
   });
 }
 
-// OSネイティブのドラムロール用セレクトボックスの初期化
 window.addEventListener('DOMContentLoaded', () => {
   let opts60 = '';
   for(let i=0; i<60; i++) opts60 += `<option value="${i}">${String(i).padStart(2,'0')}</option>`;
@@ -496,8 +540,8 @@ let selectedType = '';
 let selectedCams = new Set();
 let selectedAngle = '';
 let currentImageData = null;
+let scriptTargetInputId = null;
 
-// 時間計算ユーティリティ
 function getFps() {
   const p = currentProject();
   if(!p || !p.fps) return 30;
@@ -546,7 +590,7 @@ function loadProjects() {
     const r = localStorage.getItem(STORAGE_KEY);
     if (r) projects = JSON.parse(r);
   } catch(e) { projects = []; }
-  projects.forEach(p => { if (!p.cuts) p.cuts = []; if (!p.sequences) p.sequences = []; });
+  projects.forEach(p => { if (!p.cuts) p.cuts = []; if (!p.sequences) p.sequences = []; if (!p.script) p.script = ''; });
 }
 function currentProject() { return projects.find(p => p.id === currentProjectId) || null; }
 
@@ -563,11 +607,14 @@ function saveCurrentProject() {
   p.location = document.getElementById('location').value;
   p.direction = document.getElementById('direction').value;
   p.deadline = document.getElementById('deadline').value;
+  p.script = document.getElementById('globalScriptInput').value;
   p.updatedAt = Date.now();
   saveProjects(); calcDurations(); updateMeta();
 }
 
-document.addEventListener('input', e => { if (e.target.closest('#screen-editor')) saveCurrentProject(); });
+document.addEventListener('input', e => { 
+  if (e.target.closest('#screen-editor') && e.target.id !== 'globalScriptInput') saveCurrentProject(); 
+});
 
 function setRes(val) { document.getElementById('resolution').value = val; saveCurrentProject(); }
 function setFps(val) { document.getElementById('fps').value = val; saveCurrentProject(); }
@@ -601,7 +648,7 @@ function doCreateProject() {
   const title = document.getElementById('dlgProjectTitle').value.trim();
   if (!title) { document.getElementById('dlgProjectTitle').focus(); return; }
   const id = 'p_'+Date.now();
-  projects.push({ id, title, type:'', clientName:'', songTitle:'', resolution:'', fps:'', duration:'', concept:'', cast:'', location:'', direction:'', deadline:'', cuts:[], sequences:[], updatedAt:Date.now() });
+  projects.push({ id, title, type:'', clientName:'', songTitle:'', resolution:'', fps:'', duration:'', concept:'', cast:'', location:'', direction:'', deadline:'', script:'', cuts:[], sequences:[], updatedAt:Date.now() });
   saveProjects(); closeDlg('dlgNewProject'); openProject(id);
 }
 function doDeleteProject(id) {
@@ -621,6 +668,8 @@ function openProject(id) {
   document.getElementById('location').value = p.location||'';
   document.getElementById('direction').value = p.direction||'';
   document.getElementById('deadline').value = p.deadline||'';
+  document.getElementById('globalScriptInput').value = p.script||'';
+  
   selectedType = p.type||'';
   document.querySelectorAll('.type-chip').forEach(el => el.classList.toggle('selected', el.textContent.includes(selectedType) && selectedType!==''));
   document.querySelectorAll('.tabs .tab').forEach(t=>t.classList.remove('active'));
@@ -640,7 +689,7 @@ function switchTab(tab, el) {
   document.getElementById('fab').classList.toggle('hidden', (tab!=='cuts'));
   
   if (tab==='preview') buildPreview();
-  if (tab==='script') buildScriptView();
+  if (tab==='script') updateScriptStats();
 }
 
 function selectType(el, val) {
@@ -692,7 +741,6 @@ function openAddCut(loc) {
   selectedCams = new Set(); selectedAngle = ''; currentImageData = null;
   document.getElementById('cutModalTitle').textContent = 'カットを追加';
   
-  // タイトル入力欄を廃止したため削除
   ['m_timecode','m_camera','m_a_narration','m_a_dialogue','m_a_lyrics','m_a_bgm','m_a_se','m_a_sl','m_action','m_note'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('m_durMin').value = '0';
   document.getElementById('m_durSec').value = '0';
@@ -840,7 +888,7 @@ function clearImage() {
   document.getElementById('m_img_input').value='';
 }
 
-// ===== DRAW MODAL (ベジェ曲線補間 ＆ 筆圧検知 追加) =====
+// ===== DRAW MODAL =====
 let drawCtx, drawCanvas;
 let drawColor = '#1a1a1a';
 let drawSize = 5;
@@ -848,8 +896,6 @@ let drawing = false;
 let eraserOn = false;
 let drawHistory = [];
 let drawAspectVertical = false;
-
-// 描画のポイントを保存して曲線を計算するための配列
 let drawPoints = [];
 
 function openDrawModal() {
@@ -862,31 +908,22 @@ function openDrawModal() {
     };
     img.src = currentImageData;
   } else {
-    if (selectedType === '縦型ショート') {
-      drawAspectVertical = true;
-    } else {
-      drawAspectVertical = false;
-    }
+    drawAspectVertical = (selectedType === '縦型ショート');
     initDrawCanvas();
   }
 }
 
-function closeDrawModal() {
-  document.getElementById('drawOverlay').classList.remove('open');
-}
+function closeDrawModal() { document.getElementById('drawOverlay').classList.remove('open'); }
 
 function toggleCanvasAspect() {
   drawAspectVertical = !drawAspectVertical;
   const tempImg = new Image();
-  tempImg.onload = () => {
-    initDrawCanvas(tempImg);
-  };
+  tempImg.onload = () => { initDrawCanvas(tempImg); };
   tempImg.src = drawHistory[drawHistory.length - 1] || drawCanvas.toDataURL();
 }
 
 function initDrawCanvas(loadedImg = null) {
   drawCanvas = document.getElementById('drawCanvas');
-  
   const cw = drawAspectVertical ? 1080 : 1920;
   const ch = drawAspectVertical ? 1920 : 1080;
   
@@ -911,7 +948,6 @@ function initDrawCanvas(loadedImg = null) {
 
   drawCtx.lineJoin = 'round';
   drawCtx.lineCap = 'round';
-
   drawCanvas.onpointerdown = startDraw;
   drawCanvas.onpointermove = moveDraw;
   drawCanvas.onpointerup = endDraw;
@@ -926,38 +962,26 @@ function getPos(e) {
   const rect = drawCanvas.getBoundingClientRect();
   const scaleX = drawCanvas.width / rect.width;
   const scaleY = drawCanvas.height / rect.height;
-  return { 
-    x: (e.clientX - rect.left) * scaleX, 
-    y: (e.clientY - rect.top) * scaleY 
-  };
+  return { x: (e.clientX - rect.left) * scaleX, y: (e.clientY - rect.top) * scaleY };
 }
 
-// 修正：始点の記録
 function startDraw(e) {
   drawing = true;
   const pos = getPos(e);
-  // マウスの場合は筆圧0.5として扱う、ペンの場合は取得したpressureを使用
   const p = e.pointerType === 'mouse' ? 0.5 : (e.pressure !== undefined ? e.pressure : 0.5);
   drawPoints = [{ x: pos.x, y: pos.y, p: p }];
-  
-  // 描き始めに点を打つ
   drawCtx.beginPath();
   drawCtx.fillStyle = eraserOn ? '#ffffff' : drawColor;
   const baseSize = eraserOn ? drawSize * 3 : drawSize;
-  // 筆圧を加味した太さ
   drawCtx.arc(pos.x, pos.y, (baseSize * (0.4 + p * 1.2)) / 2, 0, Math.PI*2);
   drawCtx.fill();
-  
   e.preventDefault();
 }
 
-// 修正：ベジェ曲線補間と筆圧検知による滑らかな描画
 function moveDraw(e) {
   if (!drawing) return;
   const pos = getPos(e);
   const p = e.pointerType === 'mouse' ? 0.5 : (e.pressure !== undefined ? e.pressure : 0.5);
-
-  // わずかなブレを拾わないための処理（距離が近すぎる場合は無視）
   const lastPt = drawPoints[drawPoints.length - 1];
   const dx = pos.x - lastPt.x;
   const dy = pos.y - lastPt.y;
@@ -965,23 +989,18 @@ function moveDraw(e) {
 
   drawPoints.push({ x: pos.x, y: pos.y, p: p });
 
-  // 点が3つ以上貯まったら曲線を引く
   if (drawPoints.length >= 3) {
     const p0 = drawPoints[drawPoints.length - 3];
     const p1 = drawPoints[drawPoints.length - 2];
     const p2 = drawPoints[drawPoints.length - 1];
-
-    // 中間点を計算
     const mid1 = { x: (p0.x + p1.x) / 2, y: (p0.y + p1.y) / 2 };
     const mid2 = { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 };
 
     drawCtx.beginPath();
     drawCtx.moveTo(mid1.x, mid1.y);
-    // 直線(lineTo)ではなく、p1をコントロールポイントとしてmid2まで曲線を引く
     drawCtx.quadraticCurveTo(p1.x, p1.y, mid2.x, mid2.y);
 
     const baseSize = eraserOn ? drawSize * 3 : drawSize;
-    // 筆圧から線の太さを決定（0.4倍〜1.6倍の範囲）
     drawCtx.lineWidth = baseSize * (0.4 + p1.p * 1.2);
     drawCtx.strokeStyle = eraserOn ? '#ffffff' : drawColor;
     drawCtx.stroke();
@@ -989,26 +1008,20 @@ function moveDraw(e) {
   e.preventDefault();
 }
 
-// 修正：描画終了時に末尾の隙間を埋める
 function endDraw(e) {
   if (!drawing) return;
-  
-  // 最後の点の処理（2点以上あれば末尾を描画）
   if (drawPoints.length >= 2) {
     const p1 = drawPoints[drawPoints.length - 2];
     const p2 = drawPoints[drawPoints.length - 1];
     const mid = { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 };
-    
     drawCtx.beginPath();
     drawCtx.moveTo(mid.x, mid.y);
     drawCtx.lineTo(p2.x, p2.y);
-    
     const baseSize = eraserOn ? drawSize * 3 : drawSize;
     drawCtx.lineWidth = baseSize * (0.4 + p2.p * 1.2);
     drawCtx.strokeStyle = eraserOn ? '#ffffff' : drawColor;
     drawCtx.stroke();
   }
-  
   drawing = false;
   drawPoints = [];
   pushHistory();
@@ -1076,7 +1089,6 @@ function renderCutCard(cut, ci, loc) {
   const f_dur = framesToTimecode(cut._frames||0, fps);
   const f_accum = framesToTimecode(cut._accumFrames||0, fps);
 
-  // ト書きがなければ「（ト書きなし）」、あれば冒頭を表示してタイトルの代わりにする
   const actionPreview = cut.action ? escHtml(cut.action.substring(0, 30)) + (cut.action.length>30?'...':'') : '<span style="color:#666">（ト書きなし）</span>';
 
   return `<div class="cut-card" id="cc-${cut.id}">
@@ -1117,7 +1129,6 @@ function renderCutCard(cut, ci, loc) {
 function renderCuts() {
   const p = currentProject(); if (!p) return;
   document.getElementById('cutsCount').textContent = `${countCuts(p)} カット`;
-
   document.getElementById('topCuts').innerHTML = (p.cuts||[]).map((cut,ci)=>renderCutCard(cut,ci,'top')).join('');
 
   const list = document.getElementById('seqList');
@@ -1268,53 +1279,35 @@ function renderPreviewCutRow(cut, ci, isPdf = false) {
   return html;
 }
 
-// ===== SCRIPT VIEW (原稿・尺確認) =====
-function buildScriptView() {
-  const p = currentProject(); if (!p) return;
+// ===== SCRIPT VIEW (原稿ストック ＆ 目安尺確認) =====
+function updateScriptStats() {
+  saveCurrentProject();
+  const scriptText = document.getElementById('globalScriptInput').value;
   let totalChars = 0;
-  let html = `<div class="preview-title" style="margin-bottom:16px;">原稿・尺確認</div>`;
-
-  let scriptLines = [];
-  const cuts = getAllCuts(p);
   
-  cuts.forEach((cut, ci) => {
-    let text = '';
-    if(cut.audio) {
-      if(cut.audio.narration) text += `【NA】\n${cut.audio.narration}\n\n`;
-      if(cut.audio.dialogue) text += `【セリフ】\n${cut.audio.dialogue}\n\n`;
-      if(cut.audio.lyrics) text += `【歌詞】\n${cut.audio.lyrics}\n\n`;
-    } else if (cut.dialogue) {
-      text += `【セリフ】\n${cut.dialogue}\n\n`;
-    }
-    
-    if (text.trim()) {
-      const rawText = text.replace(/【.*?】/g, '').replace(/\s+/g, '');
-      totalChars += rawText.length;
-      
-      scriptLines.push(`
-        <div style="display:flex; gap:12px; margin-bottom:16px; border-bottom:1px dashed var(--border-light); padding-bottom:16px;">
-          <div style="color:var(--accent); font-family:var(--mono); font-weight:bold; width:36px; flex-shrink:0; font-size:14px;">C${String(ci+1).padStart(2,'0')}</div>
-          <div style="flex:1; white-space:pre-wrap; line-height:1.7; color:var(--text); font-size:13px;">${escHtml(text.trim())}</div>
-          <div style="width:70px; text-align:right; font-family:var(--mono); font-size:10px; color:var(--text-dim); flex-shrink:0;">
-            尺: ${framesToTimecode(cut._frames, getFps())}<br>
-            累計: ${framesToTimecode(cut._accumFrames, getFps())}
-          </div>
-        </div>
-      `);
-    }
+  // 空行を除いて行ごとに分割
+  const lines = scriptText.split('\n').filter(line => line.trim() !== '');
+  
+  lines.forEach(line => {
+    // 文字数カウント（空白を除外）
+    totalChars += line.replace(/\s+/g, '').length;
   });
 
   const fps = getFps();
+  const p = currentProject();
+  const cuts = getAllCuts(p);
   const totalDurFrames = cuts.length > 0 ? cuts[cuts.length-1]._accumFrames : 0;
   const totalDurStr = framesToTimecode(totalDurFrames, fps);
   
+  // 目安尺の計算: 1秒あたり約5文字
   const estSec = totalChars / 5;
   const estDurStr = framesToTimecode(estSec * fps, fps);
 
-  html += `
+  // ステータス表示
+  let statsHtml = `
     <div style="background:var(--card-hover); padding:16px; border-radius:8px; margin-bottom:24px; border:1px solid var(--border);">
       <div style="display:flex; justify-content:space-between; margin-bottom:10px; border-bottom:1px solid var(--border); padding-bottom:10px;">
-        <span style="color:var(--text-mid);">音声の総文字数</span>
+        <span style="color:var(--text-mid);">原稿の総文字数</span>
         <span style="font-weight:bold; font-size:16px; color:var(--text);">${totalChars} 文字</span>
       </div>
       <div style="display:flex; justify-content:space-between; margin-bottom:10px; border-bottom:1px solid var(--border); padding-bottom:10px;">
@@ -1322,16 +1315,79 @@ function buildScriptView() {
         <span style="font-weight:bold; font-size:16px; color:var(--accent);">${estDurStr}</span>
       </div>
       <div style="display:flex; justify-content:space-between;">
-        <span style="color:var(--text-mid);">現在のカット割り総尺</span>
+        <span style="color:var(--text-mid);">現在のコンテ総尺</span>
         <span style="font-weight:bold; font-size:16px; color:var(--text);">${totalDurStr}</span>
       </div>
     </div>
   `;
+  document.getElementById('scriptStatsArea').innerHTML = statsHtml;
 
-  html += `<div>${scriptLines.join('')}</div>`;
-  if(scriptLines.length === 0) html += `<div style="text-align:center; color:var(--text-dim); padding:20px;">音声・セリフの原稿がありません</div>`;
+  // カード生成
+  let cardsHtml = '';
+  lines.forEach((line, index) => {
+    cardsHtml += `
+      <div class="script-card">
+        <div class="script-card-text">${escHtml(line)}</div>
+        <div class="script-card-actions">
+          <button class="script-btn" onclick="openAddCutFromScript('${escHtml(line.replace(/'/g,"\\'"))}')">＋ この文で新規カット</button>
+        </div>
+      </div>
+    `;
+  });
+  
+  if(lines.length === 0) {
+    cardsHtml = `<div style="text-align:center; color:var(--text-dim); padding:20px;">原稿を貼り付けるとここにカードが生成されます</div>`;
+  }
+  document.getElementById('scriptCardsArea').innerHTML = cardsHtml;
+}
 
-  document.getElementById('scriptDoc').innerHTML = html;
+// 原稿カードから新規カット作成
+function openAddCutFromScript(text) {
+  openAddCut('top'); // とりあえず直下に作成
+  document.getElementById('m_a_dialogue').value = text;
+}
+
+// 既存カット編集時に原稿から引用する
+function openScriptSelector(targetId) {
+  scriptTargetInputId = targetId;
+  const p = currentProject();
+  if(!p || !p.script) {
+    showToast('原稿タブにテキストがありません');
+    return;
+  }
+  
+  const lines = p.script.split('\n').filter(line => line.trim() !== '');
+  if(lines.length === 0) {
+    showToast('原稿タブにテキストがありません');
+    return;
+  }
+
+  let listHtml = '';
+  lines.forEach(line => {
+    listHtml += `
+      <div style="padding:12px; border-bottom:1px solid var(--border-light); font-size:13px; color:var(--text); cursor:pointer;" onclick="doSelectScript('${escHtml(line.replace(/'/g,"\\'"))}')">
+        ${escHtml(line)}
+      </div>
+    `;
+  });
+  
+  document.getElementById('dlgScriptList').innerHTML = listHtml;
+  openDlg('dlgSelectScript');
+}
+
+// 引用したテキストを入力欄の末尾に追加
+function doSelectScript(text) {
+  if(!scriptTargetInputId) return;
+  const inputEl = document.getElementById(scriptTargetInputId);
+  if(inputEl) {
+    if(inputEl.value.trim() !== '') {
+      inputEl.value += '\n' + text;
+    } else {
+      inputEl.value = text;
+    }
+  }
+  closeDlg('dlgSelectScript');
+  showToast('引用しました');
 }
 
 // ===== EXPORT =====
@@ -1392,7 +1448,7 @@ function updateMeta() {
 function escHtml(str) { return (str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function showToast(msg) { const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500); }
 
-['cutModal','dlgNewProject','dlgNewSeq','dlgConfirm','dlgMoveCut'].forEach(id=>{
+['cutModal','dlgNewProject','dlgNewSeq','dlgConfirm','dlgMoveCut','dlgSelectScript'].forEach(id=>{
   document.getElementById(id).addEventListener('click',e=>{if(e.target===document.getElementById(id)) closeDlg(id);});
 });
 document.getElementById('cutModal').addEventListener('click',e=>{if(e.target===document.getElementById('cutModal')) closeCutModal();});
