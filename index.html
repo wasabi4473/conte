@@ -65,6 +65,10 @@
   .type-chip { padding: 4px 10px; border-radius: 20px; font-size: 11px; border: 1px solid var(--border); color: var(--text-mid); background: transparent; cursor: pointer; font-family: var(--jp); transition: all 0.12s; }
   .type-chip.selected { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
 
+  .time-input-wrap { display: flex; align-items: center; gap: 8px; background: var(--bg); border: 1px solid var(--border-light); border-radius: 7px; padding: 4px 8px; width: fit-content; }
+  .time-input { background: transparent; border: none; color: var(--text); font-family: var(--mono); font-size: 16px; width: 44px; text-align: right; outline: none; }
+  .time-label { font-size: 12px; color: var(--text-dim); }
+
   .cuts-panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; gap: 8px; }
   .cuts-count { font-size: 11px; color: var(--text-dim); font-family: var(--mono); }
   .header-btns { display: flex; gap: 6px; }
@@ -94,7 +98,10 @@
   .cut-card.editing { border-color: var(--accent); }
   .cut-card-header { display: flex; align-items: center; gap: 8px; padding: 9px 10px; cursor: pointer; user-select: none; }
   .cut-num { font-family: var(--mono); font-size: 14px; font-weight: 700; color: var(--accent); background: var(--accent-dim); padding: 4px 8px; border-radius: 4px; flex-shrink: 0; }
-  
+  .cut-thumb-wrap { position: relative; width: 80px; height: 50px; flex-shrink: 0; background: #fff; border: 1px solid var(--border); border-radius: 4px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+  .cut-thumb-wrap img { width: 100%; height: 100%; object-fit: contain; }
+  .cut-time-overlay { position: absolute; bottom: 1px; right: 1px; background: rgba(0,0,0,0.7); color: #fff; font-size: 8px; padding: 1px 3px; border-radius: 2px; font-family: var(--mono); transform: scale(0.9); transform-origin: bottom right; white-space: nowrap; }
+
   .cut-summary { flex: 1; min-width: 0; }
   .cut-title-preview { font-size: 12px; font-weight: 400; color: var(--text-mid); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.4; }
   .cut-chips { display: flex; gap: 3px; margin-top: 4px; overflow: hidden; }
@@ -232,9 +239,9 @@
   </div>
   <div class="tabs">
     <div class="tab active" onclick="switchTab('info',this)">📋 企画情報</div>
+    <div class="tab" onclick="switchTab('script',this)">📜 原稿・尺確認</div>
     <div class="tab" onclick="switchTab('cuts',this)">🎬 カット</div>
     <div class="tab" onclick="switchTab('preview',this)">👁 プレビュー</div>
-    <div class="tab" onclick="switchTab('script',this)">📜 原稿・尺確認</div>
   </div>
   <div class="editor-main">
     <!-- INFO -->
@@ -286,6 +293,18 @@
       </div>
     </div>
 
+    <!-- SCRIPT (原稿・尺確認) -->
+    <div class="tab-panel" id="tab-script">
+      <div class="field-group">
+        <div class="field-row">
+          <div class="field-label">原稿のベタ貼り（ストック）</div>
+          <textarea class="field-textarea" id="globalScriptInput" rows="8" placeholder="ここにナレーションやセリフ、歌詞の原稿をベタ貼りしてください。改行ごとに自動で分割されて下にカード化されます。" oninput="updateScriptStats()"></textarea>
+        </div>
+      </div>
+      <div id="scriptStatsArea"></div>
+      <div id="scriptCardsArea" style="margin-top:20px;"></div>
+    </div>
+
     <!-- CUTS -->
     <div class="tab-panel" id="tab-cuts">
       <div class="cuts-panel-header">
@@ -310,18 +329,6 @@
           <div id="previewDoc"></div>
         </div>
       </div>
-    </div>
-
-    <!-- SCRIPT (原稿・尺確認) -->
-    <div class="tab-panel" id="tab-script">
-      <div class="field-group">
-        <div class="field-row">
-          <div class="field-label">原稿のベタ貼り（ストック）</div>
-          <textarea class="field-textarea" id="globalScriptInput" rows="8" placeholder="ここにナレーションやセリフ、歌詞の原稿をベタ貼りしてください。改行ごとに自動で分割されて下にカード化されます。" oninput="updateScriptStats()"></textarea>
-        </div>
-      </div>
-      <div id="scriptStatsArea"></div>
-      <div id="scriptCardsArea" style="margin-top:20px;"></div>
     </div>
   </div>
 </div>
@@ -451,7 +458,7 @@
   </div>
 </div>
 
-<!-- SELECT SCRIPT DIALOG (原稿から引用) -->
+<!-- SELECT SCRIPT DIALOG -->
 <div class="dlg-overlay" id="dlgSelectScript">
   <div class="dlg-box">
     <div class="dlg-title">原稿を選択</div>
@@ -596,6 +603,7 @@ function currentProject() { return projects.find(p => p.id === currentProjectId)
 
 function saveCurrentProject() {
   const p = currentProject(); if (!p) return;
+  p.title = document.getElementById('projectTitle').value;
   p.type = selectedType;
   p.clientName = document.getElementById('clientName').value; 
   p.songTitle = document.getElementById('songTitle').value;
@@ -1202,7 +1210,8 @@ function buildPreview() {
     html += `<table class="preview-table"><tr><th style="width:30%">ト書き / 画面指示</th><th style="width:40%; text-align:center;">画面</th><th style="width:30%">音声 / セリフ / 歌詞</th></tr>`;
     (p.cuts||[]).forEach((cut,ci)=>{ html += renderPreviewCutRow(cut, ci); });
     (p.sequences||[]).forEach(seq => {
-      html += `<tr><td colspan="3" style="border-top:1px solid #444;"><div class="preview-seq-title">▶ ${escHtml(seq.title)}</div></td></tr>`;
+      // 修正: プレビュー画面でのシーケンスタイトルの上の罫線も削除
+      html += `<tr><td colspan="3"><div class="preview-seq-title">▶ ${escHtml(seq.title)}</div></td></tr>`;
       seq.cuts.forEach((cut,ci)=>{ html += renderPreviewCutRow(cut, ci); });
     });
     html += `</table>`;
@@ -1254,22 +1263,21 @@ function renderPreviewCutRow(cut, ci, isPdf = false) {
   }
   if (cut.note) aHtmlInner += `<div style="margin-top:6px; font-size:10px; color:#888; white-space:pre-wrap;">メモ: ${escHtml(cut.note)}</div>`;
 
-  const topBorder = ci === 0 ? '' : (isPdf ? 'border-top:1px solid #333;' : 'border-top:1px solid var(--border-light);');
-
+  // 修正: 完全にインラインの横線を削除
   let html = `<tr>
-    <td style="${topBorder}">
+    <td>
       <div style="position:relative; top:${vMargin}px; z-index:10; padding-bottom:20px;">
         ${vHtmlInner}
         ${!isPdf ? `<div class="offset-controls"><button class="btn-offset" onclick="changeOffset('${cut.id}','v',1)">画↓</button><button class="btn-offset" onclick="changeOffset('${cut.id}','v',-1)" ${vOff<=0?'disabled':''}>画↑</button></div>` : ''}
       </div>
     </td>
-    <td style="text-align:center; vertical-align:top; ${topBorder}">
+    <td style="text-align:center; vertical-align:top;">
       <div style="position:relative; top:${imgMargin}px; z-index:10; display:inline-block; width:100%; max-width:240px; padding-bottom:20px;">
         ${imgHtmlInner}
         ${!isPdf ? `<div class="offset-controls center"><button class="btn-offset" onclick="changeOffset('${cut.id}','img',1)">絵↓</button><button class="btn-offset" onclick="changeOffset('${cut.id}','img',-1)" ${imgOff<=0?'disabled':''}>絵↑</button></div>` : ''}
       </div>
     </td>
-    <td style="${topBorder}">
+    <td>
       <div style="position:relative; top:${aMargin}px; z-index:10; padding-bottom:20px;">
         ${aHtmlInner}
         ${!isPdf && aHtmlInner ? `<div class="offset-controls"><button class="btn-offset" onclick="changeOffset('${cut.id}','a',1)">音↓</button><button class="btn-offset" onclick="changeOffset('${cut.id}','a',-1)" ${aOff<=0?'disabled':''}>音↑</button></div>` : ''}
@@ -1285,11 +1293,9 @@ function updateScriptStats() {
   const scriptText = document.getElementById('globalScriptInput').value;
   let totalChars = 0;
   
-  // 空行を除いて行ごとに分割
   const lines = scriptText.split('\n').filter(line => line.trim() !== '');
   
   lines.forEach(line => {
-    // 文字数カウント（空白を除外）
     totalChars += line.replace(/\s+/g, '').length;
   });
 
@@ -1299,11 +1305,9 @@ function updateScriptStats() {
   const totalDurFrames = cuts.length > 0 ? cuts[cuts.length-1]._accumFrames : 0;
   const totalDurStr = framesToTimecode(totalDurFrames, fps);
   
-  // 目安尺の計算: 1秒あたり約5文字
   const estSec = totalChars / 5;
   const estDurStr = framesToTimecode(estSec * fps, fps);
 
-  // ステータス表示
   let statsHtml = `
     <div style="background:var(--card-hover); padding:16px; border-radius:8px; margin-bottom:24px; border:1px solid var(--border);">
       <div style="display:flex; justify-content:space-between; margin-bottom:10px; border-bottom:1px solid var(--border); padding-bottom:10px;">
@@ -1322,7 +1326,6 @@ function updateScriptStats() {
   `;
   document.getElementById('scriptStatsArea').innerHTML = statsHtml;
 
-  // カード生成
   let cardsHtml = '';
   lines.forEach((line, index) => {
     cardsHtml += `
@@ -1341,13 +1344,11 @@ function updateScriptStats() {
   document.getElementById('scriptCardsArea').innerHTML = cardsHtml;
 }
 
-// 原稿カードから新規カット作成
 function openAddCutFromScript(text) {
-  openAddCut('top'); // とりあえず直下に作成
+  openAddCut('top');
   document.getElementById('m_a_dialogue').value = text;
 }
 
-// 既存カット編集時に原稿から引用する
 function openScriptSelector(targetId) {
   scriptTargetInputId = targetId;
   const p = currentProject();
@@ -1375,7 +1376,6 @@ function openScriptSelector(targetId) {
   openDlg('dlgSelectScript');
 }
 
-// 引用したテキストを入力欄の末尾に追加
 function doSelectScript(text) {
   if(!scriptTargetInputId) return;
   const inputEl = document.getElementById(scriptTargetInputId);
@@ -1402,6 +1402,7 @@ function exportDoc() {
   let tableHtml = `<table class="pdf-table"><tr><th style="width:30%">ト書き / 画面指示</th><th style="width:40%">画面</th><th style="width:30%">音声 / セリフ</th></tr>`;
   (p.cuts||[]).forEach((cut,ci)=>{ tableHtml += renderPreviewCutRow(cut, ci, true); });
   (p.sequences||[]).forEach(seq=>{
+    // 修正: PDF書き出し時のシーケンスタイトルの上の罫線も削除
     tableHtml += `<tr><td colspan="3" style="padding:0;"><div class="seq-label-print">▶ ${esc(seq.title)}</div></td></tr>`;
     seq.cuts.forEach((cut,ci)=>{ tableHtml += renderPreviewCutRow(cut, ci, true); });
   });
@@ -1417,6 +1418,7 @@ h1{font-size:22px;font-weight:800;margin:0 0 4px;}
 .info-table td{padding:4px 8px;vertical-align:top;font-size:12px;border-bottom:1px solid #f0f0f0;}
 .info-table td.key{width:80px;color:#888;font-family:monospace;font-size:10px;white-space:nowrap;}
 .pdf-table{width:100%;border-collapse:collapse;table-layout:fixed;}
+/* 修正: border-topとborder-bottomはnoneで統一。縦線だけ残す */
 .pdf-table th, .pdf-table td{border-left:1px solid #333; border-right:1px solid #333; border-top:none; border-bottom:none; padding:10px;vertical-align:top;word-wrap:break-word;}
 .pdf-table th{background:#f0f0f0;font-size:11px;text-align:center; border-bottom:1px solid #333;}
 .seq-label-print{font-weight:700;font-size:12px;color:#111;background:#e0e0e0;padding:4px 10px;display:inline-block; margin-top:10px;}
