@@ -1,5 +1,7 @@
-// コンテ帳 - シンプルなオフラインキャッシュ用Service Worker
-const CACHE_NAME = 'conte-cache-v2';
+// コンテ帳 - Service Worker
+// 方針：ネットがあれば常に最新を取得し、取得できたものをキャッシュに保存。
+//       オフラインで取得に失敗した時だけ、キャッシュから返す（フォールバック）。
+const CACHE_NAME = 'conte-cache-v3';
 const FILES_TO_CACHE = [
   './',
   './index.html',
@@ -7,15 +9,17 @@ const FILES_TO_CACHE = [
   './icon.png'
 ];
 
-// インストール時：必要なファイルをキャッシュ
+// インストール時：初回キャッシュを作る（失敗しても進める）
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(FILES_TO_CACHE))
+    caches.open(CACHE_NAME)
+      .then((cache) => cache.addAll(FILES_TO_CACHE))
+      .catch(() => {})
   );
   self.skipWaiting();
 });
 
-// 有効化時：古いキャッシュを削除
+// 有効化時：古いバージョンのキャッシュを削除
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
@@ -27,20 +31,20 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// リクエスト時：キャッシュ優先、なければネットワーク
+// リクエスト時：ネットワーク優先 → 取得できたら表示＋キャッシュ更新
+//              失敗（オフライン等）したらキャッシュから返す
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
+
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      if (cached) return cached;
-      return fetch(event.request).then((response) => {
-        // 新しく取得したファイルもキャッシュに追加（同一オリジンのみ）
+    fetch(event.request)
+      .then((response) => {
         if (response.ok && event.request.url.startsWith(self.location.origin)) {
           const clone = response.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
         }
         return response;
-      }).catch(() => cached);
-    })
+      })
+      .catch(() => caches.match(event.request))
   );
 });
