@@ -948,8 +948,8 @@ function toggleCanvasAspect() {
 }
 function initDrawCanvas(loadedImg = null) {
   drawCanvas = document.getElementById('drawCanvas');
-  const cw = drawAspectVertical ? 1080 : 1920;
-  const ch = drawAspectVertical ? 1920 : 1080;
+  const cw = drawAspectVertical ? 540 : 960;
+  const ch = drawAspectVertical ? 960 : 540;
   drawCanvas.width = cw;
   drawCanvas.height = ch;
   drawCanvas.style.aspectRatio = drawAspectVertical ? "9/16" : "16/9";
@@ -1326,6 +1326,7 @@ function updateScriptStats() {
   // ② ストック側の計算
   if (document.getElementById('tab-script').classList.contains('active')) {
     p.script = document.getElementById('globalScriptInput').value;
+    saveProjects(); // 原稿の自動保存（タブを離れる前に閉じても消えないように）
   }
   const stockText = p.script || '';
   currentScriptStockLines = stockText.split('\n');
