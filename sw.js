@@ -1,5 +1,5 @@
 // コンテ帳 - シンプルなオフラインキャッシュ用Service Worker
-const CACHE_NAME = 'conte-cache-v1';
+const CACHE_NAME = 'conte-cache-v2';
 const FILES_TO_CACHE = [
   './',
   './index.html',
