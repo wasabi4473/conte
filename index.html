@@ -50,13 +50,13 @@
   .tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--surface); padding: 0 16px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
   /* toggle switch */
   #outlineToggle:checked + #outlineSwitch,
-  #scriptToggle:checked + #scriptSwitch { background-color: var(--accent); }
+  #scriptToggle:checked + #scriptSwitch { background-color: var(--green); }
   #outlineToggle:checked + #outlineSwitch::before,
   #scriptToggle:checked + #scriptSwitch::before { transform: translateX(20px); }
   #outlineSwitch::before, #scriptSwitch::before { content: ""; position: absolute; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: #fff; transition: .2s; border-radius: 50%; }
   /* ONになったらカード全体も変化させてわかりやすく */
-  body.outline-on #outlineToggleCard { border-color: var(--accent); background-color: var(--accent-dim); }
-  body.script-on #scriptToggleCard { border-color: var(--accent); background-color: var(--accent-dim); }
+  body.outline-on #outlineToggleCard { border-color: var(--green); background-color: rgba(85,201,136,0.1); }
+  body.script-on #scriptToggleCard { border-color: var(--green); background-color: rgba(85,201,136,0.1); }
   /* オプション機能：OFF時は完全に消す */
   body:not(.script-on) .tab[data-script="1"] { display: none !important; }
   body:not(.script-on) .script-block { display: none !important; }
@@ -186,7 +186,7 @@
   .preview-meta { font-size: 11px; color: var(--text-dim); font-family: var(--mono); margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
   .preview-info-block { margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
   .preview-info-row { display: flex; gap: 8px; margin-bottom: 6px; font-size: 12px; }
-  .preview-info-key { color: var(--text-dim); font-family: var(--mono); min-width: 100px; flex-shrink: 0; }
+  .preview-info-key { color: var(--text-dim); font-family: var(--mono); min-width: 80px; flex-shrink: 0; }
   .preview-seq-title { font-family: var(--mono); font-size: 12px; font-weight: 700; color: #c8c0ff; background: #2a2460; border-radius: 6px; padding: 5px 10px; margin: 16px 0 8px; display: inline-block; }
   
   .preview-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 11px; min-width: 600px; }
@@ -289,7 +289,7 @@
   </div>
   <div class="tabs">
     <div class="tab active" onclick="switchTab('info',this)">📋 企画情報</div>
-    <div class="tab" data-outline="1" onclick="switchTab('outline',this)">🧩 構成（箱書き）</div>
+    <div class="tab" data-outline="1" onclick="switchTab('outline',this)">🧩 箱書き</div>
     <div class="tab" data-script="1" onclick="switchTab('script',this)">📜 原稿・尺確認</div>
     <div class="tab" onclick="switchTab('cuts',this)">🎬 カット</div>
     <div class="tab" onclick="switchTab('preview',this)">👁 プレビュー</div>
@@ -301,8 +301,8 @@
       <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:14px;">
         <div class="toggle-card" id="outlineToggleCard" style="background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:12px 14px; display:flex; align-items:center; justify-content:space-between; gap:10px; transition:border-color .2s, background-color .2s;">
           <div>
-            <div style="font-size:12px; font-weight:600; color:var(--text);">🧩 構成（箱書き）を使う</div>
-            <div style="font-size:10px; color:var(--text-dim); margin-top:2px; line-height:1.4;">先に大きなプロット・構成を組んでからカットを作るなら</div>
+            <div style="font-size:12px; font-weight:600; color:var(--text);">🧩 箱書き機能を使う</div>
+            <div style="font-size:10px; color:var(--text-dim); margin-top:2px; line-height:1.4;">先に大きなプロットを組んでからカットを作るなら</div>
           </div>
           <label style="position:relative; display:inline-block; width:44px; height:24px; flex-shrink:0;">
             <input type="checkbox" id="outlineToggle" onchange="toggleOutlineMode()" style="opacity:0; width:0; height:0;">
@@ -312,7 +312,7 @@
         <div class="toggle-card" id="scriptToggleCard" style="background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:12px 14px; display:flex; align-items:center; justify-content:space-between; gap:10px; transition:border-color .2s, background-color .2s;">
           <div>
             <div style="font-size:12px; font-weight:600; color:var(--text);">📜 原稿ストックを使う</div>
-            <div style="font-size:10px; color:var(--text-dim); margin-top:2px; line-height:1.4;">先に書いた台本・セリフ・ナレーションがあるなら</div>
+            <div style="font-size:10px; color:var(--text-dim); margin-top:2px; line-height:1.4;">台本・歌詞などをベースにカットを割っていきたいなら</div>
           </div>
           <label style="position:relative; display:inline-block; width:44px; height:24px; flex-shrink:0;">
             <input type="checkbox" id="scriptToggle" onchange="toggleScriptMode()" style="opacity:0; width:0; height:0;">
@@ -381,13 +381,14 @@
 
     <!-- OUTLINE TAB -->
     <div class="tab-panel" id="tab-outline">
-      <div style="background: var(--accent-dim); border-left: 3px solid var(--accent); padding: 10px 14px; font-size: 11px; color: var(--text-mid); margin-bottom: 16px; line-height: 1.5;">
-        🧩 <b>構成（箱書き）を作る</b><br>
-        ここで作成した構成ブロックは、自動的にカットタブの「シーケンス（フォルダ）」になります。<br>
+      <div class="edit-section-title" style="margin-top:0px; color:var(--accent);">✨ オプション：箱書きを作る</div>
+      <div style="font-size:11px; color:var(--text-mid); margin-bottom:12px; line-height:1.5;">
+        ※必須ではありません！必要に応じて使ってください。<br>
+        ここで作成したブロックは、自動的にカットタブの「シーケンス（フォルダ）」になります。<br>
         まずは「起承転結」や「Aメロ・サビ」などの大きなハコを作りましょう。
       </div>
       <div id="outlineBlocksArea"></div>
-      <button class="btn-add-cut" style="border-style:solid;" onclick="addOutlineBlock()">＋ 構成ブロック（シーケンス）を追加</button>
+      <button class="btn-add-cut" style="border-style:solid;" onclick="addOutlineBlock()">＋ 箱書きブロックを追加</button>
     </div>
 
     <!-- SCRIPT TAB -->
@@ -691,7 +692,7 @@
 
 <div class="toast" id="toast"></div>
 
-<div id="version-check" style="position:fixed; bottom:5px; right:5px; font-size:8px; color:#444; font-family:monospace; pointer-events:none; z-index:99999;">v10</div>
+<div id="version-check" style="position:fixed; bottom:5px; right:5px; font-size:8px; color:#444; font-family:monospace; pointer-events:none; z-index:99999;">v11</div>
 
 <script>
 if ('serviceWorker' in navigator) {
@@ -823,7 +824,6 @@ function setRes(val) { document.getElementById('resolution').value = val; saveCu
 function toggleOutlineMode() {
   const on = document.getElementById('outlineToggle').checked;
   document.body.classList.toggle('outline-on', on);
-  // OFFにした時点で「構成（箱書き）」タブが選択中だったら企画情報タブに戻す
   if (!on && document.getElementById('tab-outline').classList.contains('active')) {
     document.querySelectorAll('.tabs .tab').forEach(t=>t.classList.remove('active'));
     document.querySelectorAll('.tab-panel').forEach(t=>t.classList.remove('active'));
@@ -831,13 +831,12 @@ function toggleOutlineMode() {
     document.getElementById('tab-info').classList.add('active');
   }
   saveCurrentProject();
-  showToast(on ? '構成（箱書き）をONにしました' : '構成（箱書き）をOFFにしました');
+  showToast(on ? '箱書き機能をONにしました' : '箱書き機能をOFFにしました');
 }
 
 function toggleScriptMode() {
   const on = document.getElementById('scriptToggle').checked;
   document.body.classList.toggle('script-on', on);
-  // OFFにした時点で「原稿・尺確認」タブが選択中だったら企画情報タブに戻す
   if (!on && document.getElementById('tab-script').classList.contains('active')) {
     document.querySelectorAll('.tabs .tab').forEach(t=>t.classList.remove('active'));
     document.querySelectorAll('.tab-panel').forEach(t=>t.classList.remove('active'));
