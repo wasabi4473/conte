@@ -147,6 +147,14 @@
   .draw-overlay { display: none; position: fixed; inset: 0; background: #000; z-index: 500; flex-direction: column; }
   .draw-overlay.open { display: flex; }
   .draw-toolbar { display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: var(--surface); border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+
+  /* Vcon subtitles */
+  .vsub { font-family: var(--jp); font-size: 13px; line-height: 1.5; padding: 3px 8px; border-radius: 4px; margin-bottom: 3px; display: inline-block; max-width: 100%; word-break: break-all; }
+  .vsub-narration { background: rgba(0,0,0,0.6); color: #fff; }
+  .vsub-dialogue  { background: rgba(30,80,200,0.75); color: #fff; }
+  .vsub-lyrics    { background: rgba(140,40,180,0.7); color: #fff; }
+  .vsub-se        { background: rgba(200,120,0,0.7); color: #fff; font-size:11px; }
+  .vsub-sl        { background: rgba(0,120,80,0.7); color: #fff; font-size:11px; }
   .draw-canvas-wrap { flex: 1; position: relative; background: #f0f0f0; overflow: hidden; touch-action: none; display: flex; align-items: center; justify-content: center; }
   #drawCanvas { touch-action: none; background: #fff; max-width: 100%; max-height: 100%; box-shadow: 0 0 10px rgba(0,0,0,0.5); object-fit: contain; }
   .color-swatch { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--border-light); cursor: pointer; flex-shrink: 0; }
@@ -271,6 +279,7 @@
     <div class="tab" onclick="switchTab('script',this)">📜 原稿・尺確認</div>
     <div class="tab" onclick="switchTab('cuts',this)">🎬 カット</div>
     <div class="tab" onclick="switchTab('preview',this)">👁 プレビュー</div>
+    <div class="tab" onclick="switchTab('vcon',this)">▶ Vコン</div>
   </div>
   <div class="editor-main">
     <div class="tab-panel active" id="tab-info">
@@ -306,7 +315,28 @@
           </div>
           <input class="field-input" id="fps" type="text" placeholder="その他のfps" style="margin-top:6px;">
         </div>
-        <div class="field-row"><div class="field-label">尺・長さ (プロジェクト全体)</div><input class="field-input" id="duration" type="text" placeholder="例：3:45 / 約5分"></div>
+        <div class="field-row" id="durationRow">
+          <div class="field-label">尺・長さ (プロジェクト全体)</div>
+          <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:4px;">
+            <select class="field-input" id="durProjMin" style="width:60px; padding:4px;" onchange="saveCurrentProject(); updateDurationStatus()"></select>
+            <span style="font-size:12px; color:var(--text-dim);">分</span>
+            <select class="field-input" id="durProjSec" style="width:60px; padding:4px;" onchange="saveCurrentProject(); updateDurationStatus()"></select>
+            <span style="font-size:12px; color:var(--text-dim);">秒</span>
+            <select class="field-input" id="durProjFrame" style="width:60px; padding:4px;" onchange="saveCurrentProject(); updateDurationStatus()"></select>
+            <span style="font-size:12px; color:var(--text-dim);">コマ</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:16px; margin-top:8px;">
+            <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:12px; color:var(--text-mid);">
+              <input type="radio" name="durMode" id="durModeGuide" value="guide" onchange="saveDurMode(); updateDurationStatus()">
+              目安
+            </label>
+            <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:12px; color:var(--text-mid);">
+              <input type="radio" name="durMode" id="durModeMust" value="must" onchange="saveDurMode(); updateDurationStatus()">
+              マスト
+            </label>
+          </div>
+          <div id="durationStatus" style="margin-top:8px; font-size:11px; font-family:var(--mono); display:none;"></div>
+        </div>
         <div class="field-row"><div class="field-label">クライアント / 参照元</div><input class="field-input" id="clientName" type="text" placeholder="例：株式会社〇〇 / 資料URLなど"></div>
         <div class="field-row"><div class="field-label">楽曲名・原曲情報</div><input class="field-input" id="songTitle" type="text" placeholder="例：アーティスト名「曲名」"></div>
         <div class="field-row"><div class="field-label">コンセプト・世界観</div><textarea class="field-textarea" id="concept" rows="3" placeholder="退廃的な都市、孤独な主人公が夜を歩く…"></textarea></div>
@@ -375,8 +405,74 @@
         </div>
       </div>
     </div>
-  </div>
-</div>
+
+    <!-- VCON TAB -->
+    <div class="tab-panel" id="tab-vcon">
+      <div id="vconSetup">
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:12px;">
+          <div style="font-size:12px;color:var(--text-dim);margin-bottom:10px;font-family:var(--mono);">再生設定</div>
+          <div style="display:flex;align-items:center;gap:10px;font-size:12px;color:var(--text-mid);flex-wrap:wrap;">
+            <label style="display:flex;align-items:center;gap:6px;">
+              字幕
+              <select id="vconSubMode" style="background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:4px 8px;font-size:12px;">
+                <option value="all">全種類表示</option>
+                <option value="dialogue">セリフのみ</option>
+                <option value="none">非表示</option>
+              </select>
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;">
+              書き出し品質
+              <select id="vconQuality" style="background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:4px 8px;font-size:12px;">
+                <option value="high">高画質</option>
+                <option value="mid" selected>標準</option>
+                <option value="low">軽量</option>
+              </select>
+            </label>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;flex-direction:column;">
+          <button class="btn-primary" onclick="initVcon()" style="width:100%;padding:12px;border-radius:10px;">▶ Vコンを再生</button>
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px;">
+            <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;line-height:1.6;">
+              ⏺ <b style="color:var(--text-mid);">動画として書き出す</b><br>
+              先頭から最後まで自動再生しながら録画してWebMファイルをダウンロードします。<br>
+              DaVinci・Premiere・CapCut等で読み込めます。
+            </div>
+            <button class="btn-secondary" onclick="startVconRecord()" style="width:100%;padding:10px;border-radius:8px;">⏺ 録画して書き出す（WebM）</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="vconPlayer" style="display:none;">
+        <!-- canvas area -->
+        <div style="position:relative;background:#fff;border-radius:8px;overflow:hidden;margin-bottom:8px;" id="vconCanvasWrap">
+          <canvas id="vconCanvas" style="width:100%;display:block;"></canvas>
+          <!-- subtitle overlay -->
+          <div id="vconSubs" style="position:absolute;bottom:0;left:0;right:0;padding:8px;pointer-events:none;"></div>
+        </div>
+        <!-- cut info bar -->
+        <div id="vconCutInfo" style="font-family:var(--mono);font-size:11px;color:var(--text-dim);margin-bottom:6px;padding:0 2px;display:flex;justify-content:space-between;"></div>
+        <!-- seek bar -->
+        <div style="position:relative;margin-bottom:10px;">
+          <input type="range" id="vconSeek" min="0" value="0" style="width:100%;accent-color:var(--accent);" oninput="onVconSeek(this.value)">
+        </div>
+        <!-- controls -->
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+          <button onclick="vconSkip(-1)" style="background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:8px 14px;cursor:pointer;font-size:16px;">⏮</button>
+          <button id="vconPlayBtn" onclick="toggleVconPlay()" style="background:var(--accent);border:none;color:#141414;border-radius:8px;padding:8px 20px;cursor:pointer;font-size:16px;font-weight:700;flex:1;">▶</button>
+          <button onclick="vconSkip(1)" style="background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:8px 14px;cursor:pointer;font-size:16px;">⏭</button>
+          <div id="vconTimeDisplay" style="font-family:var(--mono);font-size:11px;color:var(--text-mid);white-space:nowrap;">00:00:00 / 00:00:00</div>
+        </div>
+        <!-- recording indicator -->
+        <div id="vconRecordingBar" style="display:none;background:rgba(224,85,85,0.15);border:1px solid var(--red);border-radius:8px;padding:10px 14px;text-align:center;font-size:12px;color:var(--red);font-family:var(--mono);">
+          ⏺ 録画中... 最後まで再生したら自動で完了します
+        </div>
+        <button onclick="closeVcon()" style="width:100%;background:transparent;border:1px solid var(--border);color:var(--text-dim);border-radius:8px;padding:10px;cursor:pointer;font-size:13px;font-family:var(--jp);">← 設定に戻る</button>
+      </div>
+    </div>
+
+  </div><!-- /editor-main -->
+</div><!-- /screen-editor -->
 
 <div class="export-overlay" id="exportOverlay">
   <div class="export-header">
@@ -581,6 +677,14 @@ window.addEventListener('DOMContentLoaded', () => {
   document.getElementById('m_durMin').innerHTML = opts60;
   document.getElementById('m_durSec').innerHTML = opts60;
   document.getElementById('m_durFrame').innerHTML = opts60;
+  // プロジェクト総尺セレクト初期化（分は0〜99まで）
+  let optsMin = '';
+  for(let i=0; i<181; i++) optsMin += `<option value="${i}">${String(i).padStart(3,'0')}</option>`;
+  document.getElementById('durProjMin').innerHTML = optsMin;
+  document.getElementById('durProjSec').innerHTML = opts60;
+  document.getElementById('durProjFrame').innerHTML = opts60;
+  // デフォルトは「目安」
+  document.getElementById('durModeGuide').checked = true;
 });
 
 const STORAGE_KEY = 'conte_v4';
@@ -663,7 +767,10 @@ function saveCurrentProject() {
   p.songTitle = document.getElementById('songTitle').value;
   p.resolution = document.getElementById('resolution').value;
   p.fps = document.getElementById('fps').value;
-  p.duration = document.getElementById('duration').value;
+  p.durProjMin   = document.getElementById('durProjMin').value;
+  p.durProjSec   = document.getElementById('durProjSec').value;
+  p.durProjFrame = document.getElementById('durProjFrame').value;
+  p.durMode      = document.querySelector('input[name="durMode"]:checked')?.value || 'guide';
   p.concept = document.getElementById('concept').value;
   p.cast = document.getElementById('cast').value;
   p.location = document.getElementById('location').value;
@@ -683,7 +790,59 @@ document.addEventListener('input', e => {
 });
 
 function setRes(val) { document.getElementById('resolution').value = val; saveCurrentProject(); }
-function setFps(val) { document.getElementById('fps').value = val; saveCurrentProject(); }
+function setFps(val) {
+  document.getElementById('fps').value = val;
+  saveCurrentProject();
+  updateFrameSelects(); // fpsが変わったらカットのフレームセレクトも更新
+  updateDurationStatus();
+}
+
+function saveDurMode() { saveCurrentProject(); }
+
+// fpsに合わせてフレームセレクトの選択肢上限を更新
+function updateFrameSelects() {
+  const fps = Math.round(getFps());
+  let optsFrame = '';
+  for(let i=0; i<fps; i++) optsFrame += `<option value="${i}">${String(i).padStart(2,'0')}</option>`;
+  // カットモーダルのフレームセレクト
+  const mFrame = document.getElementById('m_durFrame');
+  const mFrameVal = mFrame.value;
+  mFrame.innerHTML = optsFrame;
+  mFrame.value = Math.min(parseInt(mFrameVal)||0, fps-1);
+  // プロジェクト総尺のフレームセレクト
+  const pFrame = document.getElementById('durProjFrame');
+  const pFrameVal = pFrame.value;
+  pFrame.innerHTML = optsFrame;
+  pFrame.value = Math.min(parseInt(pFrameVal)||0, fps-1);
+}
+
+// 残り尺ステータスを更新（マスト時のみ表示）
+function updateDurationStatus() {
+  const statusEl = document.getElementById('durationStatus');
+  const p = currentProject(); if (!p) { statusEl.style.display='none'; return; }
+  const isMust = p.durMode === 'must';
+  if (!isMust) { statusEl.style.display='none'; return; }
+
+  const fps = getFps();
+  const projTotalFrames = timecodeToFrames(p.durProjMin||0, p.durProjSec||0, p.durProjFrame||0, fps);
+  if (projTotalFrames === 0) { statusEl.style.display='none'; return; }
+
+  calcDurations();
+  const cuts = getAllCuts(p);
+  const usedFrames = cuts.reduce((s,c) => s + (c._frames||0), 0);
+  const remainFrames = projTotalFrames - usedFrames;
+  const usedTC = framesToTimecode(usedFrames, fps);
+  const projTC = framesToTimecode(projTotalFrames, fps);
+
+  if (remainFrames < 0) {
+    const overTC = framesToTimecode(Math.abs(remainFrames), fps);
+    statusEl.innerHTML = `<span style="color:var(--red)">⚠ ${overTC} オーバー</span>　使用 ${usedTC} / 上限 ${projTC}`;
+  } else {
+    const remTC = framesToTimecode(remainFrames, fps);
+    statusEl.innerHTML = `<span style="color:var(--green)">残り ${remTC}</span>　使用 ${usedTC} / 上限 ${projTC}`;
+  }
+  statusEl.style.display = 'block';
+}
 
 function openDlg(id) { document.getElementById(id).classList.add('open'); }
 function closeDlg(id) { document.getElementById(id).classList.remove('open'); }
@@ -772,7 +931,11 @@ function openProject(id) {
   document.getElementById('songTitle').value = p.songTitle||'';
   document.getElementById('resolution').value = p.resolution||'';
   document.getElementById('fps').value = p.fps||'';
-  document.getElementById('duration').value = p.duration||'';
+  document.getElementById('durProjMin').value   = p.durProjMin   || '0';
+  document.getElementById('durProjSec').value   = p.durProjSec   || '0';
+  document.getElementById('durProjFrame').value = p.durProjFrame || '0';
+  const durMode = p.durMode || 'guide';
+  document.getElementById(durMode === 'must' ? 'durModeMust' : 'durModeGuide').checked = true;
   document.getElementById('concept').value = p.concept||'';
   document.getElementById('cast').value = p.cast||'';
   document.getElementById('location').value = p.location||'';
@@ -788,7 +951,7 @@ function openProject(id) {
   document.getElementById('tab-info').classList.add('active');
   document.getElementById('fab').classList.add('hidden');
   calcDurations();
-  renderCuts(); updateMeta(); showScreen('editor');
+  renderCuts(); updateMeta(); updateFrameSelects(); updateDurationStatus(); showScreen('editor');
 }
 function goBack() { saveCurrentProject(); renderProjectList(); showScreen('list'); }
 function showScreen(n) { document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); document.getElementById('screen-'+n).classList.add('active'); }
@@ -797,9 +960,9 @@ function switchTab(tab, el) {
   document.querySelectorAll('.tabs .tab').forEach(t=>t.classList.remove('active')); el.classList.add('active');
   document.querySelectorAll('.tab-panel').forEach(t=>t.classList.remove('active')); document.getElementById('tab-'+tab).classList.add('active');
   document.getElementById('fab').classList.toggle('hidden', (tab!=='cuts'));
-  
   if (tab==='preview') buildPreview();
   if (tab==='script') updateScriptStats();
+  if (tab!=='vcon' && typeof stopVcon === 'function' && vconPlaying) stopVcon();
 }
 
 function selectType(el, val) {
@@ -849,14 +1012,13 @@ function openAddCutTopLevel() { openAddCut('top'); }
 function openAddCut(loc) {
   editingCutLocation = loc; editingCutId = null;
   selectedCams = new Set(); selectedAngle = ''; currentImageData = null;
-  pendingScriptRemoveIndices = []; // 初期化
+  pendingScriptRemoveIndices = [];
   document.getElementById('cutModalTitle').textContent = 'カットを追加';
-  
   ['m_timecode','m_camera','m_a_narration','m_a_dialogue','m_a_lyrics','m_a_bgm','m_a_se','m_a_sl','m_action','m_note'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('m_durMin').value = '0';
   document.getElementById('m_durSec').value = '0';
+  updateFrameSelects(); // fpsと連動してフレーム選択肢を更新
   document.getElementById('m_durFrame').value = '0';
-  
   document.querySelectorAll('#cutModal .cam-chip').forEach(c=>c.classList.remove('selected'));
   clearImage();
   document.getElementById('cutModal').classList.add('open');
@@ -956,6 +1118,7 @@ function saveCut() {
   closeCutModal(); 
   renderCuts(); 
   updateScriptStatsIfNeeded();
+  updateDurationStatus();
   updateMeta();
   showToast(editingCutId?'更新しました':'カットを追加しました');
 }
@@ -964,7 +1127,7 @@ function deleteCut(loc, cutId) {
   const p = currentProject(); if (!p) return;
   const arr = getCutArray(p, loc); if (!arr) return;
   const idx = arr.findIndex(c=>c.id===cutId); if (idx>=0) arr.splice(idx,1);
-  saveProjects(); calcDurations(); renderCuts(); updateScriptStatsIfNeeded(); updateMeta(); showToast('削除しました');
+  saveProjects(); calcDurations(); renderCuts(); updateScriptStatsIfNeeded(); updateDurationStatus(); updateMeta(); showToast('削除しました');
 }
 function moveCut(loc, cutId, dir) {
   const p = currentProject(); if (!p) return;
@@ -1308,9 +1471,13 @@ function buildPreview() {
   html += `<div class="preview-meta">作成日：${now} · カット ${countCuts(p)}</div>`;
   
   const fpsStr = p.fps ? `${p.fps} fps` : '';
+  const projDurFrames = timecodeToFrames(p.durProjMin||0, p.durProjSec||0, p.durProjFrame||0, getFps());
+  const projDurStr = projDurFrames > 0
+    ? `${framesToTimecode(projDurFrames, getFps())}${p.durMode === 'must' ? '（マスト）' : '（目安）'}`
+    : '';
   
   html += `<div class="preview-info-block">`;
-  [['タイトル',p.title],['タイプ',p.type],['クライアント',p.clientName],['楽曲',p.songTitle],['解像度',p.resolution],['フレームレート',fpsStr],['尺 (全体)',p.duration],['コンセプト',p.concept],['キャスト',p.cast],['ロケ',p.location],['演出',p.direction],['納期',p.deadline]]
+  [['タイトル',p.title],['タイプ',p.type],['クライアント',p.clientName],['楽曲',p.songTitle],['解像度',p.resolution],['フレームレート',fpsStr],['尺 (全体)',projDurStr],['コンセプト',p.concept],['キャスト',p.cast],['ロケ',p.location],['演出',p.direction],['納期',p.deadline]]
     .filter(([,v])=>v).forEach(([k,v])=>{html+=`<div class="preview-info-row"><div class="preview-info-key">${k}</div><div>${escHtml(v)}</div></div>`;});
   html += `</div>`;
 
@@ -1562,7 +1729,11 @@ function exportDoc() {
   function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
   
   const fpsStr = p.fps ? `${p.fps} fps` : '';
-  const infoRows = [['タイトル',p.title],['タイプ',p.type],['クライアント',p.clientName],['楽曲',p.songTitle],['解像度',p.resolution],['フレームレート',fpsStr],['尺 (全体)',p.duration],['コンセプト',p.concept],['キャスト',p.cast],['ロケ',p.location],['演出',p.direction],['納期',p.deadline]].filter(([,v])=>v).map(([k,v])=>`<tr><td class="key-print">${k}</td><td>${esc(v)}</td></tr>`).join('');
+  const projDurFramesE = timecodeToFrames(p.durProjMin||0, p.durProjSec||0, p.durProjFrame||0, parseFloat(p.fps)||30);
+  const projDurStrE = projDurFramesE > 0
+    ? `${framesToTimecode(projDurFramesE, parseFloat(p.fps)||30)}${p.durMode === 'must' ? '（マスト）' : '（目安）'}`
+    : '';
+  const infoRows = [['タイトル',p.title],['タイプ',p.type],['クライアント',p.clientName],['楽曲',p.songTitle],['解像度',p.resolution],['フレームレート',fpsStr],['尺 (全体)',projDurStrE],['コンセプト',p.concept],['キャスト',p.cast],['ロケ',p.location],['演出',p.direction],['納期',p.deadline]].filter(([,v])=>v).map(([k,v])=>`<tr><td class="key-print">${k}</td><td>${esc(v)}</td></tr>`).join('');
 
   let tableHtml = `<table class="pdf-table"><tr><th style="width:30%">ト書き / 画面指示</th><th style="width:40%">画面</th><th style="width:30%">音声 / セリフ</th></tr>`;
   (p.cuts||[]).forEach((cut,ci)=>{ tableHtml += renderPreviewCutRow(cut, ci, true); });
@@ -1618,6 +1789,309 @@ function showToast(msg) { const t=document.getElementById('toast');t.textContent
   document.getElementById(id).addEventListener('click',e=>{if(e.target===document.getElementById(id)) closeDlg(id);});
 });
 document.getElementById('cutModal').addEventListener('click',e=>{if(e.target===document.getElementById('cutModal')) closeCutModal();});
+
+// ===== VCON ENGINE =====
+let vconCuts = [];       // 再生用カット配列
+let vconFps = 30;
+let vconTotalFrames = 0;
+let vconCurrentFrame = 0;
+let vconPlaying = false;
+let vconRafId = null;
+let vconLastTime = null;
+let vconCanvas = null;
+let vconCtx = null;
+let vconImgCache = {};   // cutId → Image object
+let vconRecorder = null;
+let vconRecordChunks = [];
+let vconRecording = false;
+
+function buildVconCuts() {
+  const p = currentProject(); if (!p) return [];
+  const fps = getFps();
+  const all = getAllCuts(p);
+  let accum = 0;
+  return all.map((cut, i) => {
+    const frames = timecodeToFrames(cut.durM, cut.durS, cut.durF, fps);
+    const entry = {
+      index: i,
+      cut,
+      startFrame: accum,
+      frames: Math.max(frames, 1), // 0フレームカットは1フレとして扱う
+    };
+    accum += entry.frames;
+    return entry;
+  });
+}
+
+function initVcon() {
+  const p = currentProject(); if (!p) return;
+  vconFps = getFps();
+  vconCuts = buildVconCuts();
+  if (vconCuts.length === 0) { showToast('カットがありません'); return; }
+  vconTotalFrames = vconCuts.reduce((s, e) => s + e.frames, 0);
+  vconCurrentFrame = 0;
+
+  // canvas setup
+  vconCanvas = document.getElementById('vconCanvas');
+  vconCtx = vconCanvas.getContext('2d');
+
+  // aspect ratio from project
+  const isVert = isVerticalProject();
+  const cw = isVert ? 540 : 960;
+  const ch = isVert ? 960 : 540;
+  vconCanvas.width = cw;
+  vconCanvas.height = ch;
+
+  // seek bar
+  const seek = document.getElementById('vconSeek');
+  seek.max = vconTotalFrames - 1;
+  seek.value = 0;
+
+  // preload images
+  vconImgCache = {};
+  vconCuts.forEach(entry => {
+    if (entry.cut.image) {
+      const img = new Image();
+      img.src = entry.cut.image;
+      vconImgCache[entry.cut.id] = img;
+    }
+  });
+
+  document.getElementById('vconSetup').style.display = 'none';
+  document.getElementById('vconPlayer').style.display = 'block';
+
+  renderVconFrame();
+  updateVconUI();
+}
+
+function closeVcon() {
+  stopVcon();
+  document.getElementById('vconSetup').style.display = 'block';
+  document.getElementById('vconPlayer').style.display = 'none';
+}
+
+function stopVcon() {
+  vconPlaying = false;
+  if (vconRafId) { cancelAnimationFrame(vconRafId); vconRafId = null; }
+  vconLastTime = null;
+  document.getElementById('vconPlayBtn').textContent = '▶';
+}
+
+function toggleVconPlay() {
+  if (vconPlaying) {
+    stopVcon();
+  } else {
+    if (vconCurrentFrame >= vconTotalFrames - 1) vconCurrentFrame = 0;
+    vconPlaying = true;
+    vconLastTime = null;
+    document.getElementById('vconPlayBtn').textContent = '⏸';
+    vconRafId = requestAnimationFrame(vconLoop); // ← 最初からrAFで呼ぶ
+  }
+}
+
+function vconLoop(timestamp) {
+  if (!vconPlaying) return;
+  if (vconLastTime === null) {
+    vconLastTime = timestamp;
+    vconRafId = requestAnimationFrame(vconLoop);
+    return;
+  }
+  const elapsed = timestamp - vconLastTime;
+  const frameDuration = 1000 / vconFps;
+
+  if (elapsed >= frameDuration) {
+    const steps = Math.max(1, Math.floor(elapsed / frameDuration));
+    vconLastTime = timestamp - (elapsed % frameDuration);
+    vconCurrentFrame = Math.min(vconCurrentFrame + steps, vconTotalFrames - 1);
+    renderVconFrame();
+    updateVconUI();
+    if (vconCurrentFrame >= vconTotalFrames - 1) {
+      stopVcon();
+      if (vconRecording) finalizeVconRecord();
+      return;
+    }
+  }
+  vconRafId = requestAnimationFrame(vconLoop);
+}
+
+function onVconSeek(val) {
+  vconCurrentFrame = parseInt(val);
+  renderVconFrame();
+  updateVconUI();
+}
+
+function vconSkip(dir) {
+  // 前後のカットの先頭に移動
+  const cur = getCurrentVconEntry();
+  if (!cur) return;
+  if (dir < 0) {
+    // 前のカット or 現カット先頭
+    if (vconCurrentFrame > cur.startFrame) {
+      vconCurrentFrame = cur.startFrame;
+    } else {
+      const idx = vconCuts.indexOf(cur);
+      if (idx > 0) vconCurrentFrame = vconCuts[idx - 1].startFrame;
+    }
+  } else {
+    const idx = vconCuts.indexOf(cur);
+    if (idx < vconCuts.length - 1) vconCurrentFrame = vconCuts[idx + 1].startFrame;
+  }
+  renderVconFrame();
+  updateVconUI();
+}
+
+function getCurrentVconEntry() {
+  return vconCuts.find(e => vconCurrentFrame >= e.startFrame && vconCurrentFrame < e.startFrame + e.frames)
+    || vconCuts[vconCuts.length - 1];
+}
+
+function renderVconFrame() {
+  if (!vconCtx || !vconCanvas) return;
+  const entry = getCurrentVconEntry(); if (!entry) return;
+  const cut = entry.cut;
+  const cw = vconCanvas.width, ch = vconCanvas.height;
+
+  // background
+  vconCtx.fillStyle = '#ffffff';
+  vconCtx.fillRect(0, 0, cw, ch);
+
+  const img = vconImgCache[cut.id];
+  if (img && img.complete && img.naturalWidth > 0) {
+    // contain fit
+    const scale = Math.min(cw / img.naturalWidth, ch / img.naturalHeight);
+    const dw = img.naturalWidth * scale, dh = img.naturalHeight * scale;
+    const dx = (cw - dw) / 2, dy = (ch - dh) / 2;
+    vconCtx.drawImage(img, dx, dy, dw, dh);
+  } else {
+    // placeholder
+    vconCtx.fillStyle = '#f5f5f5';
+    vconCtx.fillRect(0, 0, cw, ch);
+    // grid lines
+    vconCtx.strokeStyle = '#ddd';
+    vconCtx.lineWidth = 1;
+    for (let x = 0; x < cw; x += 60) { vconCtx.beginPath(); vconCtx.moveTo(x,0); vconCtx.lineTo(x,ch); vconCtx.stroke(); }
+    for (let y = 0; y < ch; y += 60) { vconCtx.beginPath(); vconCtx.moveTo(0,y); vconCtx.lineTo(cw,y); vconCtx.stroke(); }
+    // cut number
+    vconCtx.fillStyle = '#bbb';
+    vconCtx.font = `bold ${Math.floor(ch * 0.18)}px monospace`;
+    vconCtx.textAlign = 'center';
+    vconCtx.textBaseline = 'middle';
+    // find global cut index
+    const globalIdx = entry.index;
+    vconCtx.fillText(`C${String(globalIdx + 1).padStart(2,'0')}`, cw/2, ch/2);
+    vconCtx.font = `${Math.floor(ch * 0.055)}px sans-serif`;
+    vconCtx.fillStyle = '#ccc';
+    vconCtx.fillText(cut.action ? cut.action.slice(0,30) : '', cw/2, ch/2 + ch*0.15);
+  }
+
+  // frame counter overlay (top-left)
+  const frameInCut = vconCurrentFrame - entry.startFrame;
+  vconCtx.fillStyle = 'rgba(0,0,0,0.45)';
+  vconCtx.fillRect(0, 0, cw, 28);
+  vconCtx.fillStyle = '#e8c840';
+  vconCtx.font = `bold 13px monospace`;
+  vconCtx.textAlign = 'left';
+  vconCtx.textBaseline = 'middle';
+  vconCtx.fillText(`C${String(entry.index+1).padStart(2,'0')}  ${frameInCut}f / ${entry.frames}f`, 10, 14);
+  vconCtx.textAlign = 'right';
+  vconCtx.fillStyle = '#aaa';
+  vconCtx.fillText(framesToTimecode(vconCurrentFrame, vconFps), cw - 10, 14);
+
+  // update subtitles
+  updateVconSubs(cut);
+}
+
+function updateVconSubs(cut) {
+  const mode = document.getElementById('vconSubMode').value;
+  const el = document.getElementById('vconSubs');
+  if (mode === 'none') { el.innerHTML = ''; return; }
+
+  const audio = cut.audio || {};
+  const lines = [];
+  if (mode === 'all') {
+    if (audio.narration) lines.push({cls:'vsub-narration', label:'NA',  text: audio.narration});
+    if (audio.dialogue)  lines.push({cls:'vsub-dialogue',  label:'セリフ', text: audio.dialogue});
+    if (audio.lyrics)    lines.push({cls:'vsub-lyrics',    label:'歌',  text: audio.lyrics});
+    if (audio.bgm)       lines.push({cls:'vsub-se',        label:'BGM', text: audio.bgm});
+    if (audio.se)        lines.push({cls:'vsub-se',        label:'SE',  text: audio.se});
+    if (audio.sl)        lines.push({cls:'vsub-sl',        label:'SL',  text: audio.sl});
+  } else if (mode === 'dialogue') {
+    if (audio.dialogue)  lines.push({cls:'vsub-dialogue',  label:'', text: audio.dialogue});
+  }
+
+  el.innerHTML = lines.map(l =>
+    `<div class="vsub ${l.cls}">${l.label ? `<b>[${l.label}]</b> ` : ''}${escHtml(l.text)}</div>`
+  ).join('');
+}
+
+function updateVconUI() {
+  const entry = getCurrentVconEntry();
+  const seek = document.getElementById('vconSeek');
+  seek.value = vconCurrentFrame;
+
+  // time display
+  const curTC = framesToTimecode(vconCurrentFrame, vconFps);
+  const totTC = framesToTimecode(vconTotalFrames, vconFps);
+  document.getElementById('vconTimeDisplay').textContent = `${curTC} / ${totTC}`;
+
+  // cut info
+  if (entry) {
+    const cut = entry.cut;
+    const camStr = [...(cut.cams||[]), cut.angle].filter(Boolean).join(' / ');
+    document.getElementById('vconCutInfo').innerHTML =
+      `<span>C${String(entry.index+1).padStart(2,'0')} ${escHtml(cut.action?.slice(0,30)||'')}</span>` +
+      `<span style="color:var(--accent)">${camStr}</span>`;
+  }
+}
+
+// ===== VCON RECORD =====
+function startVconRecord() {
+  if (!vconCanvas) { initVcon(); }
+  // wait for initVcon to set up canvas
+  setTimeout(() => {
+    const quality = document.getElementById('vconQuality').value;
+    const bitrate = quality === 'high' ? 8000000 : quality === 'mid' ? 3000000 : 1000000;
+    try {
+      const stream = vconCanvas.captureStream(vconFps);
+      vconRecordChunks = [];
+      vconRecorder = new MediaRecorder(stream, {
+        mimeType: MediaRecorder.isTypeSupported('video/webm;codecs=vp9') ? 'video/webm;codecs=vp9' : 'video/webm',
+        videoBitsPerSecond: bitrate,
+      });
+      vconRecorder.ondataavailable = e => { if (e.data.size > 0) vconRecordChunks.push(e.data); };
+      vconRecorder.onstop = downloadVconVideo;
+      vconRecorder.start(100);
+      vconRecording = true;
+      vconCurrentFrame = 0;
+      document.getElementById('vconRecordingBar').style.display = 'block';
+      // auto-play
+      if (!vconPlaying) toggleVconPlay();
+    } catch(e) {
+      showToast('この環境では録画できません');
+    }
+  }, 100);
+}
+
+function finalizeVconRecord() {
+  if (vconRecorder && vconRecorder.state !== 'inactive') {
+    vconRecorder.stop();
+  }
+  vconRecording = false;
+  document.getElementById('vconRecordingBar').style.display = 'none';
+}
+
+function downloadVconVideo() {
+  const p = currentProject();
+  const blob = new Blob(vconRecordChunks, {type:'video/webm'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${(p?.title||'vcon')}_vcon.webm`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('WebMを保存しました');
+  vconRecordChunks = [];
+}
 
 loadProjects(); renderProjectList();
 </script>
