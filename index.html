@@ -94,6 +94,9 @@
   .cut-card.editing { border-color: var(--accent); }
   .cut-card-header { display: flex; align-items: center; gap: 8px; padding: 9px 10px; cursor: pointer; user-select: none; }
   .cut-num { font-family: var(--mono); font-size: 14px; font-weight: 700; color: var(--accent); background: var(--accent-dim); padding: 4px 8px; border-radius: 4px; flex-shrink: 0; }
+  .cut-thumb-wrap { position: relative; width: 80px; height: 50px; flex-shrink: 0; background: #fff; border: 1px solid var(--border); border-radius: 4px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+  .cut-thumb-wrap img { width: 100%; height: 100%; object-fit: contain; }
+  .cut-time-overlay { position: absolute; bottom: 1px; right: 1px; background: rgba(0,0,0,0.7); color: #fff; font-size: 8px; padding: 1px 3px; border-radius: 2px; font-family: var(--mono); transform: scale(0.9); transform-origin: bottom right; white-space: nowrap; }
 
   .cut-summary { flex: 1; min-width: 0; }
   .cut-title-preview { font-size: 12px; font-weight: 400; color: var(--text-mid); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.4; }
@@ -226,11 +229,13 @@
 </head>
 <body>
 
-<!-- PROJECT LIST -->
 <div class="screen active" id="screen-list">
   <div class="sticky-header">
     <div class="logo">CONTE</div>
-    <button class="btn-new" onclick="createProject()">＋ 新規企画</button>
+    <div style="display: flex; gap: 8px;">
+      <button class="btn-secondary" style="padding: 8px 12px; font-size: 12px; border: 1px solid var(--border); border-radius: 20px; color: var(--text-mid); background: var(--surface);" onclick="openDataManagement()">⚙️ データ管理</button>
+      <button class="btn-new" onclick="createProject()">＋ 新規企画</button>
+    </div>
   </div>
   <div class="list-body">
     <div class="list-empty" id="listEmpty"><div class="list-empty-icon">🎬</div>企画がまだありません<br>「新規企画」からはじめましょう</div>
@@ -238,7 +243,23 @@
   </div>
 </div>
 
-<!-- EDITOR -->
+<div class="dlg-overlay" id="dlgData">
+  <div class="dlg-box">
+    <div class="dlg-title">データ管理 (バックアップ)</div>
+    <div class="dlg-msg">端末の容量不足などでデータが消える場合に備え、定期的にバックアップを保存してください。</div>
+    <button class="btn-primary" style="width:100%; margin-bottom:16px; padding: 12px; border-radius: 8px;" onclick="backupData()">📥 全データを保存 (JSON)</button>
+    <div style="border-top:1px dashed var(--border); margin-bottom:16px;"></div>
+    <div class="dlg-msg">バックアップファイルから復元します。（現在のデータはすべて上書きされます）</div>
+    <label class="btn-secondary" style="display:block; text-align:center; padding: 12px; border-radius: 8px; cursor:pointer; background: var(--bg); border: 1px solid var(--border-light);">
+      📤 データを復元 (JSON)
+      <input type="file" accept=".json" style="display:none;" onchange="restoreData(event)">
+    </label>
+    <div class="dlg-actions">
+      <button class="btn-secondary" style="width:100%; padding: 12px; border-radius: 8px;" onclick="closeDlg('dlgData')">閉じる</button>
+    </div>
+  </div>
+</div>
+
 <div class="screen" id="screen-editor">
   <div class="editor-header">
     <button class="btn-back" onclick="goBack()">←</button>
@@ -255,7 +276,6 @@
     <div class="tab" onclick="switchTab('preview',this)">👁 プレビュー</div>
   </div>
   <div class="editor-main">
-    <!-- INFO -->
     <div class="tab-panel active" id="tab-info">
       <div class="field-group">
         <div class="field-row">
@@ -304,7 +324,6 @@
       </div>
     </div>
 
-    <!-- SCRIPT (原稿・尺確認) -->
     <div class="tab-panel" id="tab-script">
       <div id="scriptStatsArea"></div>
 
@@ -317,20 +336,17 @@
         <div style="flex:1; min-width:280px;">
           <div class="edit-section-title" style="margin-top:0;">📝 未割り当ての原稿（ストック）</div>
           
-          <!-- UI改善：ベタ貼り用の入力欄を視覚的に分離 -->
           <div style="background:var(--bg); border:1px dashed var(--accent); border-radius:8px; padding:12px; margin-bottom:20px;">
             <div style="font-size:11px; color:var(--accent); margin-bottom:8px; font-weight:bold;">▼ ここに原稿をベタ貼りしてください</div>
             <textarea class="field-textarea" id="globalScriptInput" rows="5" style="background:transparent; border:none; color:var(--text); width:100%; outline:none; resize:none;" placeholder="ナレーションやセリフの原稿を貼り付けます。改行すると自動で下のカードに分割されます。" oninput="updateScriptStats()"></textarea>
           </div>
 
-          <!-- UI改善：カードリストエリアを明示 -->
           <div style="font-size:11px; color:var(--text-dim); margin-bottom:8px; font-family:var(--mono);">▼ カット作成用カード (タップで追加)</div>
           <div id="scriptCardsArea"></div>
         </div>
       </div>
     </div>
 
-    <!-- CUTS -->
     <div class="tab-panel" id="tab-cuts">
       <div class="cuts-panel-header">
         <div class="cuts-count" id="cutsCount">0 カット</div>
@@ -343,7 +359,6 @@
       <div id="seqList"></div>
     </div>
 
-    <!-- PREVIEW -->
     <div class="tab-panel" id="tab-preview">
       <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px; background:var(--surface); padding:10px 14px; border-radius:8px; border:1px solid var(--border);">
         <span style="font-size:12px; color:var(--text-dim);">🔍 ズーム表示</span>
@@ -358,7 +373,6 @@
   </div>
 </div>
 
-<!-- EXPORT OVERLAY -->
 <div class="export-overlay" id="exportOverlay">
   <div class="export-header">
     <button onclick="closeExport()">← 戻る</button>
@@ -368,16 +382,13 @@
   <div class="export-content" id="exportContent"></div>
 </div>
 
-<!-- FAB -->
 <button class="fab hidden" id="fab" onclick="openAddCutTopLevel()">＋</button>
 
-<!-- CUT MODAL -->
 <div class="modal-overlay" id="cutModal">
   <div class="modal">
     <div class="modal-handle"></div>
     <div class="modal-title" id="cutModalTitle">カットを追加</div>
     
-    <!-- 映像ブロック -->
     <div class="edit-section-title" style="color:var(--accent);">🎥 映像・画面指示</div>
     <div class="edit-field">
       <div class="edit-label"><span>⏱</span> カットの尺 (分:秒:コマ)</div>
@@ -434,7 +445,6 @@
     </div>
     <div class="edit-field"><div class="edit-label"><span>🎭</span> ト書き / 演技指示</div><textarea class="edit-input" id="m_action" rows="3" placeholder="動き、表情、照明、効果…"></textarea></div>
 
-    <!-- 音声ブロック -->
     <div class="edit-section-title" style="color:var(--green); margin-top:24px;">
       🔊 音響・セリフ
     </div>
@@ -465,7 +475,6 @@
   </div>
 </div>
 
-<!-- DRAW MODAL -->
 <div class="draw-overlay" id="drawOverlay">
   <div class="draw-toolbar">
     <div class="color-swatch selected" style="background:#1a1a1a" onclick="setDrawColor('#1a1a1a',this)"></div>
@@ -493,7 +502,6 @@
   </div>
 </div>
 
-<!-- SELECT SCRIPT DIALOG -->
 <div class="dlg-overlay" id="dlgSelectScript">
   <div class="dlg-box">
     <div class="dlg-title">原稿を選択</div>
@@ -505,7 +513,6 @@
   </div>
 </div>
 
-<!-- NEW PROJECT DIALOG -->
 <div class="dlg-overlay" id="dlgNewProject">
   <div class="dlg-box">
     <div class="dlg-title">企画名をつけよう</div>
@@ -518,7 +525,6 @@
   </div>
 </div>
 
-<!-- NEW SEQUENCE DIALOG -->
 <div class="dlg-overlay" id="dlgNewSeq">
   <div class="dlg-box">
     <div class="dlg-title">シーケンス名</div>
@@ -531,7 +537,6 @@
   </div>
 </div>
 
-<!-- CONFIRM DIALOG -->
 <div class="dlg-overlay" id="dlgConfirm">
   <div class="dlg-box">
     <div class="dlg-title" id="dlgConfirmTitle"></div>
@@ -543,7 +548,6 @@
   </div>
 </div>
 
-<!-- MOVE CUT DIALOG -->
 <div class="dlg-overlay" id="dlgMoveCut">
   <div class="dlg-box">
     <div class="dlg-title">カットの移動先</div>
@@ -557,8 +561,7 @@
 
 <div class="toast" id="toast"></div>
 
-<!-- バージョン確認用（必要なくなったら消してOKです） -->
-<div id="version-check" style="position:fixed; bottom:5px; right:5px; font-size:8px; color:#444; font-family:monospace; pointer-events:none; z-index:99999;">v3</div>
+<div id="version-check" style="position:fixed; bottom:5px; right:5px; font-size:8px; color:#444; font-family:monospace; pointer-events:none; z-index:99999;">v4</div>
 
 <script>
 if ('serviceWorker' in navigator) {
@@ -690,6 +693,52 @@ function renderProjectList() {
     </div>`;
   }).join('');
 }
+
+// ===== DATA MANAGEMENT =====
+function openDataManagement() {
+  openDlg('dlgData');
+}
+
+function backupData() {
+  const data = localStorage.getItem(STORAGE_KEY) || '[]';
+  const blob = new Blob([data], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const date = new Date().toLocaleDateString('ja-JP').replace(/\//g, '');
+  a.href = url;
+  a.download = `conte_backup_${date}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('バックアップをダウンロードしました');
+  closeDlg('dlgData');
+}
+
+function restoreData(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (Array.isArray(data)) {
+        if (confirm('現在のすべてのデータが上書きされます。本当によろしいですか？')) {
+          projects = data;
+          saveProjects();
+          renderProjectList();
+          closeDlg('dlgData');
+          showToast('データを復元しました');
+        }
+      } else {
+        alert('無効なデータ形式です。コンテ帳のバックアップファイルを選択してください。');
+      }
+    } catch (err) {
+      alert('ファイルの読み込みに失敗しました。');
+    }
+    e.target.value = ''; // reset
+  };
+  reader.readAsText(file);
+}
+
 function createProject() {
   document.getElementById('dlgProjectTitle').value = '';
   openDlg('dlgNewProject');
@@ -1538,7 +1587,7 @@ function updateMeta() {
 function escHtml(str) { return (str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function showToast(msg) { const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500); }
 
-['cutModal','dlgNewProject','dlgNewSeq','dlgConfirm','dlgMoveCut','dlgSelectScript'].forEach(id=>{
+['cutModal','dlgNewProject','dlgNewSeq','dlgConfirm','dlgMoveCut','dlgSelectScript', 'dlgData'].forEach(id=>{
   document.getElementById(id).addEventListener('click',e=>{if(e.target===document.getElementById(id)) closeDlg(id);});
 });
 document.getElementById('cutModal').addEventListener('click',e=>{if(e.target===document.getElementById('cutModal')) closeCutModal();});
