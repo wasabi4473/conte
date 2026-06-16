@@ -189,7 +189,7 @@
   /* SCRIPT CARD */
   .script-card { background: var(--bg); border: 1px solid var(--border-light); border-radius: 8px; padding: 12px; margin-bottom: 8px; display: flex; flex-direction: column; gap: 8px; }
   .script-card-text { font-size: 13px; color: var(--text); line-height: 1.6; white-space: pre-wrap; }
-  .script-card-actions { display: flex; justify-content: flex-end; }
+  .script-card-actions { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
   .script-btn { background: var(--surface); border: 1px solid var(--border); color: var(--text-mid); border-radius: 4px; padding: 6px 12px; font-size: 11px; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: all 0.15s; }
   .script-btn:hover { border-color: var(--accent); color: var(--accent); }
   
@@ -376,7 +376,7 @@
             <textarea class="field-textarea" id="globalScriptInput" rows="5" style="background:transparent; border:none; color:var(--text); width:100%; outline:none; resize:none;" placeholder="ナレーションやセリフの原稿を貼り付けます。改行すると自動で下のカードに分割されます。" oninput="updateScriptStats()"></textarea>
           </div>
 
-          <div style="font-size:11px; color:var(--text-dim); margin-bottom:8px; font-family:var(--mono);">▼ カット作成用カード (タップで追加)</div>
+          <div style="font-size:11px; color:var(--text-dim); margin-bottom:8px; font-family:var(--mono);">▼ カット作成用カード (追加先を選択)</div>
           <div id="scriptCardsArea"></div>
         </div>
       </div>
@@ -444,20 +444,26 @@
       </div>
 
       <div id="vconPlayer" style="display:none;">
+        <!-- canvas area -->
         <div style="position:relative;background:#fff;border-radius:8px;overflow:hidden;margin-bottom:8px;" id="vconCanvasWrap">
           <canvas id="vconCanvas" style="width:100%;display:block;"></canvas>
+          <!-- subtitle overlay -->
           <div id="vconSubs" style="position:absolute;bottom:0;left:0;right:0;padding:8px;pointer-events:none;"></div>
         </div>
+        <!-- cut info bar -->
         <div id="vconCutInfo" style="font-family:var(--mono);font-size:11px;color:var(--text-dim);margin-bottom:6px;padding:0 2px;display:flex;justify-content:space-between;"></div>
+        <!-- seek bar -->
         <div style="position:relative;margin-bottom:10px;">
           <input type="range" id="vconSeek" min="0" value="0" style="width:100%;accent-color:var(--accent);" oninput="onVconSeek(this.value)">
         </div>
+        <!-- controls -->
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
           <button onclick="vconSkip(-1)" style="background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:8px 14px;cursor:pointer;font-size:16px;">⏮</button>
           <button id="vconPlayBtn" onclick="toggleVconPlay()" style="background:var(--accent);border:none;color:#141414;border-radius:8px;padding:8px 20px;cursor:pointer;font-size:16px;font-weight:700;flex:1;">▶</button>
           <button onclick="vconSkip(1)" style="background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:8px 14px;cursor:pointer;font-size:16px;">⏭</button>
           <div id="vconTimeDisplay" style="font-family:var(--mono);font-size:11px;color:var(--text-mid);white-space:nowrap;">00:00:00 / 00:00:00</div>
         </div>
+        <!-- recording indicator -->
         <div id="vconRecordingBar" style="display:none;background:rgba(224,85,85,0.15);border:1px solid var(--red);border-radius:8px;padding:10px 14px;text-align:center;font-size:12px;color:var(--red);font-family:var(--mono);">
           ⏺ 録画中... 最後まで再生したら自動で完了します
         </div>
@@ -465,8 +471,8 @@
       </div>
     </div>
 
-  </div>
-</div>
+  </div><!-- /editor-main -->
+</div><!-- /screen-editor -->
 
 <div class="export-overlay" id="exportOverlay">
   <div class="export-header">
@@ -853,6 +859,7 @@ function renderProjectList() {
   }).join('');
 }
 
+// ===== DATA MANAGEMENT =====
 function openDataManagement() { openDlg('dlgData'); }
 
 function backupData() {
@@ -1004,7 +1011,7 @@ function openAddCut(loc) {
   ['m_timecode','m_camera','m_a_narration','m_a_dialogue','m_a_lyrics','m_a_bgm','m_a_se','m_a_sl','m_action','m_note'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('m_durMin').value = '0';
   document.getElementById('m_durSec').value = '0';
-  updateFrameSelects();
+  updateFrameSelects(); 
   document.getElementById('m_durFrame').value = '0';
   document.querySelectorAll('#cutModal .cam-chip').forEach(c=>c.classList.remove('selected'));
   clearImage();
@@ -1354,6 +1361,7 @@ function renderCutCard(cut, ci, loc) {
 
   const actionPreview = cut.action ? escHtml(cut.action.substring(0, 30)) + (cut.action.length>30?'...':'') : '<span style="color:#666">（ト書きなし）</span>';
 
+  // サムネイルのアスペクト比対応
   const isVert = isVerticalProject();
   const thumbW = isVert ? 30 : 60;
   
@@ -1502,7 +1510,7 @@ function renderPreviewCutRow(cut, ci, isPdf = false) {
 
   const isVert = isVerticalProject();
   const aspect = isVert ? '9/16' : '16/9';
-  const maxWidth = isVert ? '100px' : '160px';
+  const maxWidth = isVert ? '100px' : '160px'; 
 
   let imgHtmlInner = '';
   if (isPdf) {
@@ -1577,7 +1585,6 @@ function updateScriptStats() {
   const fps = getFps();
   const cuts = getAllCuts(p);
 
-  // ① 割り当て済み（本編）
   let timelineActualChars = 0;
   let timelineReadChars = 0;
   let timelineHtml = '';
@@ -1594,9 +1601,13 @@ function updateScriptStats() {
       timelineActualChars += pureText.length;
       for(let j=0; j<pureText.length; j++) {
         const char = pureText[j];
-        if(char.match(/[一-龠々]/)) timelineReadChars += 1.7;
-        else if(char.match(/[a-zA-Zａ-ｚＡ-Ｚ]/)) timelineReadChars += 0.8;
-        else timelineReadChars += 1;
+        if (char.match(/[一-龠々]/)) {
+          timelineReadChars += 1.5;
+        } else if (char.match(/[a-zA-Zａ-ｚＡ-Ｚ0-9０-９]/)) {
+          timelineReadChars += 0.75;
+        } else {
+          timelineReadChars += 1;
+        }
       }
       
       timelineHtml += `<div style="font-size:12px; margin-bottom:12px; border-bottom:1px solid var(--border); padding-bottom:12px; line-height:1.6;">
@@ -1608,7 +1619,6 @@ function updateScriptStats() {
   if(!timelineHtml) timelineHtml = `<div style="color:var(--text-dim); text-align:center; padding:20px 0;">まだカットに原稿がありません</div>`;
   document.getElementById('scriptTimelineArea').innerHTML = timelineHtml;
 
-  // ② ストック側
   if (document.getElementById('tab-script').classList.contains('active')) {
     p.script = document.getElementById('globalScriptInput').value;
     saveProjects(); 
@@ -1625,16 +1635,22 @@ function updateScriptStats() {
       stockActualChars += pureText.length;
       for(let j=0; j<pureText.length; j++) {
         const char = pureText[j];
-        if(char.match(/[一-龠々]/)) stockReadChars += 1.7;
-        else if(char.match(/[a-zA-Zａ-ｚＡ-Ｚ]/)) stockReadChars += 0.8;
-        else stockReadChars += 1;
+        if (char.match(/[一-龠々]/)) {
+          stockReadChars += 1.5;
+        } else if (char.match(/[a-zA-Zａ-ｚＡ-Ｚ0-9０-９]/)) {
+          stockReadChars += 0.75;
+        } else {
+          stockReadChars += 1;
+        }
       }
 
       cardsHtml += `
         <div class="script-card">
           <div class="script-card-text">${escHtml(line)}</div>
           <div class="script-card-actions">
-            <button class="script-btn" onclick="openAddCutFromScript(${idx})">＋ この文で新規カット</button>
+            <button class="script-btn" onclick="openAddCutFromScript(${idx}, 'dialogue')">💬 セリフで追加</button>
+            <button class="script-btn" onclick="openAddCutFromScript(${idx}, 'narration')">🎙 NAで追加</button>
+            <button class="script-btn" onclick="openAddCutFromScript(${idx}, 'lyrics')">🎶 歌詞で追加</button>
           </div>
         </div>
       `;
@@ -1643,9 +1659,9 @@ function updateScriptStats() {
   if(stockActualChars === 0) cardsHtml = `<div style="text-align:center; color:var(--text-dim); padding:20px;">未割り当ての原稿はありません</div>`;
   document.getElementById('scriptCardsArea').innerHTML = cardsHtml;
 
-  // ③ 全体計算
+  // 全体計算
   const totalActualChars = timelineActualChars + stockActualChars;
-  const totalReadChars = Math.round(timelineReadChars + stockReadChars); // ここで丸める
+  const totalReadChars = Math.round(timelineReadChars + stockReadChars); // 表示用に四捨五入
   const estSec = totalReadChars / 5;
   const estDurStr = framesToTimecode(estSec * fps, fps);
   const totalDurFrames = cuts.length > 0 ? cuts[cuts.length-1]._accumFrames : 0;
@@ -1673,11 +1689,19 @@ function updateScriptStats() {
   document.getElementById('scriptStatsArea').innerHTML = statsHtml;
 }
 
-function openAddCutFromScript(idx) {
+function openAddCutFromScript(idx, targetType = 'dialogue') {
   const text = currentScriptStockLines[idx];
   openAddCut('top');
-  document.getElementById('m_a_dialogue').value = text;
-  pendingScriptRemoveIndices = [idx];
+  
+  if (targetType === 'lyrics') {
+    document.getElementById('m_a_lyrics').value = text;
+  } else if (targetType === 'narration') {
+    document.getElementById('m_a_narration').value = text;
+  } else {
+    document.getElementById('m_a_dialogue').value = text;
+  }
+  
+  pendingScriptRemoveIndices = [idx]; 
 }
 
 function openScriptSelector(targetId) {
@@ -1712,7 +1736,7 @@ function doSelectScript(idx) {
     if(inputEl.value.trim() !== '') inputEl.value += '\n' + text;
     else inputEl.value = text;
   }
-  pendingScriptRemoveIndices.push(idx);
+  pendingScriptRemoveIndices.push(idx); 
   closeDlg('dlgSelectScript');
   showToast('入力欄に挿入しました（保存時にストックから消去されます）');
 }
@@ -2023,6 +2047,7 @@ function updateVconUI() {
   }
 }
 
+// ===== VCON RECORD =====
 function startVconRecord() {
   if (!vconCanvas) { initVcon(); }
   setTimeout(() => {
