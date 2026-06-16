@@ -173,7 +173,7 @@
   .preview-meta { font-size: 11px; color: var(--text-dim); font-family: var(--mono); margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
   .preview-info-block { margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
   .preview-info-row { display: flex; gap: 8px; margin-bottom: 6px; font-size: 12px; }
-  .preview-info-key { color: var(--text-dim); font-family: var(--mono); min-width: 80px; flex-shrink: 0; }
+  .preview-info-key { color: var(--text-dim); font-family: var(--mono); min-width: 100px; flex-shrink: 0; }
   .preview-seq-title { font-family: var(--mono); font-size: 12px; font-weight: 700; color: #c8c0ff; background: #2a2460; border-radius: 6px; padding: 5px 10px; margin: 16px 0 8px; display: inline-block; }
   
   .preview-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 11px; min-width: 600px; }
@@ -338,14 +338,14 @@
           </div>
           <div id="durationStatus" style="margin-top:8px; font-size:11px; font-family:var(--mono); display:none;"></div>
         </div>
-        <div class="field-row"><div class="field-label">クライアント / 参照元</div><input class="field-input" id="clientName" type="text" placeholder="例：株式会社〇〇 / 資料URLなど"></div>
-        <div class="field-row"><div class="field-label">楽曲名・原曲情報</div><input class="field-input" id="songTitle" type="text" placeholder="例：アーティスト名「曲名」"></div>
+        <div class="field-row"><div class="field-label">クライアント / アーティスト名</div><input class="field-input" id="clientName" type="text" placeholder="例：株式会社〇〇 / アーティスト名 など"></div>
         <div class="field-row"><div class="field-label">納期・スケジュール</div><input class="field-input" id="deadline" type="text" placeholder="2025年3月公開予定"></div>
       </div>
 
-      <!-- 新規：構成ブロック（シーケンス連動）エリア -->
-      <div class="edit-section-title" style="margin-top:24px; color:var(--accent);">📝 構成（箱書き）</div>
+      <!-- 構成ブロック（シーケンス連動）エリア -->
+      <div class="edit-section-title" style="margin-top:24px; color:var(--accent);">✨ オプション：構成（箱書き）を作る</div>
       <div style="font-size:11px; color:var(--text-mid); margin-bottom:12px; line-height:1.5;">
+        ※必須ではありません！必要に応じて使ってください。<br>
         ここで作成した構成ブロックは、自動的にカットタブの「シーケンス（フォルダ）」になります。<br>
         まずは「起承転結」や「Aメロ・サビ」などの大きなハコを作りましょう。
       </div>
@@ -356,10 +356,9 @@
     <!-- SCRIPT TAB -->
     <div class="tab-panel" id="tab-script">
       <div style="background: var(--accent-dim); border-left: 3px solid var(--accent); padding: 10px 14px; font-size: 11px; color: var(--text-mid); margin-bottom: 16px; line-height: 1.5;">
-        💡 <b>使い方ガイド</b><br>
-        原稿は、ここで先にベタ貼りして「カードからカットを追加」していくことも、<br>
-        逆にカット編集画面で直接書き込んでいくこともできます。<br>
-        （どちらの手順で作っても、総文字数や目安尺は自動で合算されます）
+        💡 <b>【任意】原稿のストック機能</b><br>
+        ※ここは必須ではありません！必要に応じて使ってねコーナーです。<br>
+        先に長めのテキストをベタ貼りしておき、カード化してパズルのようにカットを追加していくことができます。（カット編集画面で直接書き込むことも可能です）
       </div>
       <div id="scriptStatsArea"></div>
       <div style="display:flex; gap:16px; flex-wrap:wrap; margin-top:16px;">
@@ -655,7 +654,7 @@
 
 <div class="toast" id="toast"></div>
 
-<div id="version-check" style="position:fixed; bottom:5px; right:5px; font-size:8px; color:#444; font-family:monospace; pointer-events:none; z-index:99999;">v9</div>
+<div id="version-check" style="position:fixed; bottom:5px; right:5px; font-size:8px; color:#444; font-family:monospace; pointer-events:none; z-index:99999;">v10</div>
 
 <script>
 if ('serviceWorker' in navigator) {
@@ -670,13 +669,12 @@ window.addEventListener('DOMContentLoaded', () => {
   document.getElementById('m_durMin').innerHTML = opts60;
   document.getElementById('m_durSec').innerHTML = opts60;
   document.getElementById('m_durFrame').innerHTML = opts60;
-  // プロジェクト総尺セレクト初期化（分は0〜99まで）
+  
   let optsMin = '';
   for(let i=0; i<181; i++) optsMin += `<option value="${i}">${String(i).padStart(3,'0')}</option>`;
   document.getElementById('durProjMin').innerHTML = optsMin;
   document.getElementById('durProjSec').innerHTML = opts60;
   document.getElementById('durProjFrame').innerHTML = opts60;
-  // デフォルトは「目安」
   document.getElementById('durModeGuide').checked = true;
 });
 
@@ -692,7 +690,7 @@ let selectedAngle = '';
 let currentImageData = null;
 let scriptTargetInputId = null;
 let currentScriptStockLines = []; 
-let pendingScriptRemoveIndices = []; // キャンセル対応用
+let pendingScriptRemoveIndices = []; 
 
 function isVerticalProject() {
   const p = currentProject();
@@ -752,7 +750,6 @@ function loadProjects() {
     if (!p.cuts) p.cuts = []; 
     if (!p.sequences) p.sequences = []; 
     if (!p.script) p.script = ''; 
-    // 互換性担保: 古いoutlineがあれば最初のシーケンス等に変換するか捨てるかだが、今回は無視
   });
 }
 function currentProject() { return projects.find(p => p.id === currentProjectId) || null; }
@@ -762,7 +759,6 @@ function saveCurrentProject() {
   p.title = document.getElementById('projectTitle').value;
   p.type = selectedType;
   p.clientName = document.getElementById('clientName').value; 
-  p.songTitle = document.getElementById('songTitle').value;
   p.resolution = document.getElementById('resolution').value;
   p.fps = document.getElementById('fps').value;
   p.durProjMin   = document.getElementById('durProjMin').value;
@@ -787,30 +783,26 @@ function setRes(val) { document.getElementById('resolution').value = val; saveCu
 function setFps(val) {
   document.getElementById('fps').value = val;
   saveCurrentProject();
-  updateFrameSelects(); // fpsが変わったらカットのフレームセレクトも更新
+  updateFrameSelects(); 
   updateDurationStatus();
 }
 
 function saveDurMode() { saveCurrentProject(); }
 
-// fpsに合わせてフレームセレクトの選択肢上限を更新
 function updateFrameSelects() {
   const fps = Math.round(getFps());
   let optsFrame = '';
   for(let i=0; i<fps; i++) optsFrame += `<option value="${i}">${String(i).padStart(2,'0')}</option>`;
-  // カットモーダルのフレームセレクト
   const mFrame = document.getElementById('m_durFrame');
   const mFrameVal = mFrame.value;
   mFrame.innerHTML = optsFrame;
   mFrame.value = Math.min(parseInt(mFrameVal)||0, fps-1);
-  // プロジェクト総尺のフレームセレクト
   const pFrame = document.getElementById('durProjFrame');
   const pFrameVal = pFrame.value;
   pFrame.innerHTML = optsFrame;
   pFrame.value = Math.min(parseInt(pFrameVal)||0, fps-1);
 }
 
-// 残り尺ステータスを更新（マスト時のみ表示）
 function updateDurationStatus() {
   const statusEl = document.getElementById('durationStatus');
   const p = currentProject(); if (!p) { statusEl.style.display='none'; return; }
@@ -859,7 +851,6 @@ function renderProjectList() {
   }).join('');
 }
 
-// ===== DATA MANAGEMENT =====
 function openDataManagement() { openDlg('dlgData'); }
 
 function backupData() {
@@ -911,7 +902,7 @@ function doCreateProject() {
   const title = document.getElementById('dlgProjectTitle').value.trim();
   if (!title) { document.getElementById('dlgProjectTitle').focus(); return; }
   const id = 'p_'+Date.now();
-  projects.push({ id, title, type:'', clientName:'', songTitle:'', resolution:'', fps:'', duration:'', deadline:'', script:'', cuts:[], sequences:[], updatedAt:Date.now() });
+  projects.push({ id, title, type:'', clientName:'', resolution:'', fps:'', duration:'', deadline:'', script:'', cuts:[], sequences:[], updatedAt:Date.now() });
   saveProjects(); closeDlg('dlgNewProject'); openProject(id);
 }
 function doDeleteProject(id) {
@@ -922,7 +913,6 @@ function openProject(id) {
   const p = currentProject(); if (!p) return;
   document.getElementById('projectTitle').value = p.title||'';
   document.getElementById('clientName').value = p.clientName||''; 
-  document.getElementById('songTitle').value = p.songTitle||'';
   document.getElementById('resolution').value = p.resolution||'';
   document.getElementById('fps').value = p.fps||'';
   document.getElementById('durProjMin').value   = p.durProjMin   || '0';
@@ -963,7 +953,6 @@ function selectType(el, val) {
   saveCurrentProject();
 }
 
-// ===== 構成ブロック (シーケンスと連動) =====
 function renderOutlineBlocks() {
   const p = currentProject(); if(!p) return;
   const area = document.getElementById('outlineBlocksArea');
@@ -1046,7 +1035,7 @@ function openAddCut(loc) {
   ['m_timecode','m_camera','m_a_narration','m_a_dialogue','m_a_lyrics','m_a_bgm','m_a_se','m_a_sl','m_action','m_note'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('m_durMin').value = '0';
   document.getElementById('m_durSec').value = '0';
-  updateFrameSelects(); // fpsと連動してフレーム選択肢を更新
+  updateFrameSelects(); 
   document.getElementById('m_durFrame').value = '0';
   document.querySelectorAll('#cutModal .cam-chip').forEach(c=>c.classList.remove('selected'));
   clearImage();
@@ -1058,7 +1047,7 @@ function openEditCut(loc, cutId) {
   const cut = arr.find(c=>c.id===cutId); if (!cut) return;
   editingCutLocation = loc; editingCutId = cutId;
   selectedCams = new Set(cut.cams||[]); selectedAngle = cut.angle||''; currentImageData = cut.image||null;
-  pendingScriptRemoveIndices = []; // 初期化
+  pendingScriptRemoveIndices = []; 
   
   document.getElementById('cutModalTitle').textContent = 'カットを編集';
   
@@ -1086,7 +1075,7 @@ function openEditCut(loc, cutId) {
 }
 function closeCutModal() { 
   document.getElementById('cutModal').classList.remove('open'); 
-  pendingScriptRemoveIndices = []; // キャンセル時は破棄
+  pendingScriptRemoveIndices = []; 
 }
 
 function updateScriptStatsIfNeeded() {
@@ -1135,7 +1124,6 @@ function saveCut() {
   if (editingCutId) { const idx=arr.findIndex(c=>c.id===editingCutId); if(idx>=0) arr[idx]=cut; }
   else arr.push(cut);
   
-  // 保存完了時にストックから確定で消去
   if (pendingScriptRemoveIndices.length > 0) {
     const uniqueIndices = [...new Set(pendingScriptRemoveIndices)].sort((a, b) => b - a);
     uniqueIndices.forEach(idx => removeLineFromStockByIndex(idx));
@@ -1397,7 +1385,6 @@ function renderCutCard(cut, ci, loc) {
 
   const actionPreview = cut.action ? escHtml(cut.action.substring(0, 30)) + (cut.action.length>30?'...':'') : '<span style="color:#666">（ト書きなし）</span>';
 
-  // サムネイルのアスペクト比対応
   const isVert = isVerticalProject();
   const thumbW = isVert ? 30 : 60;
   
@@ -1506,7 +1493,7 @@ function buildPreview() {
     : '';
   
   html += `<div class="preview-info-block">`;
-  [['タイトル',p.title],['タイプ',p.type],['クライアント',p.clientName],['楽曲',p.songTitle],['解像度',p.resolution],['フレームレート',fpsStr],['尺 (全体)',projDurStr],['納期',p.deadline]]
+  [['タイトル',p.title],['タイプ',p.type],['クライアント / アーティスト名',p.clientName],['解像度',p.resolution],['フレームレート',fpsStr],['尺 (全体)',projDurStr],['納期',p.deadline]]
     .filter(([,v])=>v).forEach(([k,v])=>{html+=`<div class="preview-info-row"><div class="preview-info-key">${k}</div><div style="white-space:pre-wrap;">${escHtml(v)}</div></div>`;});
   html += `</div>`;
 
@@ -1548,7 +1535,7 @@ function renderPreviewCutRow(cut, ci, isPdf = false) {
 
   const isVert = isVerticalProject();
   const aspect = isVert ? '9/16' : '16/9';
-  const maxWidth = isVert ? '100px' : '160px'; // 縦型は高さを確保するために幅を狭める
+  const maxWidth = isVert ? '100px' : '160px'; 
 
   let imgHtmlInner = '';
   if (isPdf) {
@@ -1618,16 +1605,15 @@ function removeLineFromStockByIndex(idx) {
   saveCurrentProject();
 }
 
-// 読み尺の計算ロジック（重み付け調整）
 function countReadChars(text) {
   let count = 0;
   const pureText = text.replace(/【.*?】/g, '').replace(/\s+/g, '');
   for(let j=0; j<pureText.length; j++) {
     const char = pureText[j];
-    if (char.match(/[一-龠々]/)) count += 1.25; // 漢字
-    else if (char.match(/[ぁぃぅぇぉゃゅょァィゥェォャュョ]/)) count += 0; // 拗音・小書き
-    else if (char.match(/[a-zA-Z0-9]/)) count += 0.75; // 英数字
-    else count += 1; // 通常のひらがな、カタカナ、促音（っ）など
+    if (char.match(/[一-龠々]/)) count += 1.25; 
+    else if (char.match(/[ぁぃぅぇぉゃゅょァィゥェォャュョ]/)) count += 0; 
+    else if (char.match(/[a-zA-Z0-9]/)) count += 0.75; 
+    else count += 1; 
   }
   return count;
 }
@@ -1766,7 +1752,7 @@ function doSelectScript(idx) {
     if(inputEl.value.trim() !== '') inputEl.value += '\n' + text;
     else inputEl.value = text;
   }
-  pendingScriptRemoveIndices.push(idx); // 保存用に予約
+  pendingScriptRemoveIndices.push(idx); 
   closeDlg('dlgSelectScript');
   showToast('入力欄に挿入しました（保存時にストックから消去されます）');
 }
@@ -1782,7 +1768,7 @@ function exportDoc() {
   const projDurStrE = projDurFramesE > 0
     ? `${framesToTimecode(projDurFramesE, parseFloat(p.fps)||30)}${p.durMode === 'must' ? '（マスト）' : '（目安）'}`
     : '';
-  const infoRows = [['タイトル',p.title],['タイプ',p.type],['クライアント',p.clientName],['楽曲',p.songTitle],['解像度',p.resolution],['フレームレート',fpsStr],['尺 (全体)',projDurStrE],['納期',p.deadline]].filter(([,v])=>v).map(([k,v])=>`<tr><td class="key-print">${k}</td><td style="white-space:pre-wrap;">${esc(v)}</td></tr>`).join('');
+  const infoRows = [['タイトル',p.title],['タイプ',p.type],['クライアント / アーティスト名',p.clientName],['解像度',p.resolution],['フレームレート',fpsStr],['尺 (全体)',projDurStrE],['納期',p.deadline]].filter(([,v])=>v).map(([k,v])=>`<tr><td class="key-print">${k}</td><td style="white-space:pre-wrap;">${esc(v)}</td></tr>`).join('');
 
   let tableHtml = `<table class="pdf-table"><tr><th style="width:30%">ト書き / 画面指示</th><th style="width:40%">画面</th><th style="width:30%">音声 / セリフ</th></tr>`;
   (p.cuts||[]).forEach((cut,ci)=>{ tableHtml += renderPreviewCutRow(cut, ci, true); });
@@ -1842,7 +1828,7 @@ function showToast(msg) { const t=document.getElementById('toast');t.textContent
 document.getElementById('cutModal').addEventListener('click',e=>{if(e.target===document.getElementById('cutModal')) closeCutModal();});
 
 // ===== VCON ENGINE =====
-let vconCuts = [];       // 再生用カット配列
+let vconCuts = [];       
 let vconFps = 30;
 let vconTotalFrames = 0;
 let vconCurrentFrame = 0;
@@ -1851,7 +1837,7 @@ let vconRafId = null;
 let vconLastTime = null;
 let vconCanvas = null;
 let vconCtx = null;
-let vconImgCache = {};   // cutId → Image object
+let vconImgCache = {};   
 let vconRecorder = null;
 let vconRecordChunks = [];
 let vconRecording = false;
@@ -1867,7 +1853,7 @@ function buildVconCuts() {
       index: i,
       cut,
       startFrame: accum,
-      frames: Math.max(frames, 1), // 0フレームカットは1フレとして扱う
+      frames: Math.max(frames, 1), 
     };
     accum += entry.frames;
     return entry;
@@ -1882,23 +1868,19 @@ function initVcon() {
   vconTotalFrames = vconCuts.reduce((s, e) => s + e.frames, 0);
   vconCurrentFrame = 0;
 
-  // canvas setup
   vconCanvas = document.getElementById('vconCanvas');
   vconCtx = vconCanvas.getContext('2d');
 
-  // aspect ratio from project
   const isVert = isVerticalProject();
   const cw = isVert ? 540 : 960;
   const ch = isVert ? 960 : 540;
   vconCanvas.width = cw;
   vconCanvas.height = ch;
 
-  // seek bar
   const seek = document.getElementById('vconSeek');
   seek.max = vconTotalFrames - 1;
   seek.value = 0;
 
-  // preload images
   vconImgCache = {};
   vconCuts.forEach(entry => {
     if (entry.cut.image) {
@@ -1936,7 +1918,7 @@ function toggleVconPlay() {
     vconPlaying = true;
     vconLastTime = null;
     document.getElementById('vconPlayBtn').textContent = '⏸';
-    vconRafId = requestAnimationFrame(vconLoop); // ← 最初からrAFで呼ぶ
+    vconRafId = requestAnimationFrame(vconLoop); 
   }
 }
 
@@ -1972,11 +1954,9 @@ function onVconSeek(val) {
 }
 
 function vconSkip(dir) {
-  // 前後のカットの先頭に移動
   const cur = getCurrentVconEntry();
   if (!cur) return;
   if (dir < 0) {
-    // 前のカット or 現カット先頭
     if (vconCurrentFrame > cur.startFrame) {
       vconCurrentFrame = cur.startFrame;
     } else {
@@ -2002,32 +1982,26 @@ function renderVconFrame() {
   const cut = entry.cut;
   const cw = vconCanvas.width, ch = vconCanvas.height;
 
-  // background
   vconCtx.fillStyle = '#ffffff';
   vconCtx.fillRect(0, 0, cw, ch);
 
   const img = vconImgCache[cut.id];
   if (img && img.complete && img.naturalWidth > 0) {
-    // contain fit
     const scale = Math.min(cw / img.naturalWidth, ch / img.naturalHeight);
     const dw = img.naturalWidth * scale, dh = img.naturalHeight * scale;
     const dx = (cw - dw) / 2, dy = (ch - dh) / 2;
     vconCtx.drawImage(img, dx, dy, dw, dh);
   } else {
-    // placeholder
     vconCtx.fillStyle = '#f5f5f5';
     vconCtx.fillRect(0, 0, cw, ch);
-    // grid lines
     vconCtx.strokeStyle = '#ddd';
     vconCtx.lineWidth = 1;
     for (let x = 0; x < cw; x += 60) { vconCtx.beginPath(); vconCtx.moveTo(x,0); vconCtx.lineTo(x,ch); vconCtx.stroke(); }
     for (let y = 0; y < ch; y += 60) { vconCtx.beginPath(); vconCtx.moveTo(0,y); vconCtx.lineTo(cw,y); vconCtx.stroke(); }
-    // cut number
     vconCtx.fillStyle = '#bbb';
     vconCtx.font = `bold ${Math.floor(ch * 0.18)}px monospace`;
     vconCtx.textAlign = 'center';
     vconCtx.textBaseline = 'middle';
-    // find global cut index
     const globalIdx = entry.index;
     vconCtx.fillText(`C${String(globalIdx + 1).padStart(2,'0')}`, cw/2, ch/2);
     vconCtx.font = `${Math.floor(ch * 0.055)}px sans-serif`;
@@ -2035,7 +2009,6 @@ function renderVconFrame() {
     vconCtx.fillText(cut.action ? cut.action.slice(0,30) : '', cw/2, ch/2 + ch*0.15);
   }
 
-  // frame counter overlay (top-left)
   const frameInCut = vconCurrentFrame - entry.startFrame;
   vconCtx.fillStyle = 'rgba(0,0,0,0.45)';
   vconCtx.fillRect(0, 0, cw, 28);
@@ -2048,7 +2021,6 @@ function renderVconFrame() {
   vconCtx.fillStyle = '#aaa';
   vconCtx.fillText(framesToTimecode(vconCurrentFrame, vconFps), cw - 10, 14);
 
-  // update subtitles
   updateVconSubs(cut);
 }
 
@@ -2080,12 +2052,10 @@ function updateVconUI() {
   const seek = document.getElementById('vconSeek');
   seek.value = vconCurrentFrame;
 
-  // time display
   const curTC = framesToTimecode(vconCurrentFrame, vconFps);
   const totTC = framesToTimecode(vconTotalFrames, vconFps);
   document.getElementById('vconTimeDisplay').textContent = `${curTC} / ${totTC}`;
 
-  // cut info
   if (entry) {
     const cut = entry.cut;
     const camStr = [...(cut.cams||[]), cut.angle].filter(Boolean).join(' / ');
@@ -2095,10 +2065,8 @@ function updateVconUI() {
   }
 }
 
-// ===== VCON RECORD =====
 function startVconRecord() {
   if (!vconCanvas) { initVcon(); }
-  // wait for initVcon to set up canvas
   setTimeout(() => {
     const quality = document.getElementById('vconQuality').value;
     const bitrate = quality === 'high' ? 8000000 : quality === 'mid' ? 3000000 : 1000000;
@@ -2115,7 +2083,6 @@ function startVconRecord() {
       vconRecording = true;
       vconCurrentFrame = 0;
       document.getElementById('vconRecordingBar').style.display = 'block';
-      // auto-play
       if (!vconPlaying) toggleVconPlay();
     } catch(e) {
       showToast('この環境では録画できません');
