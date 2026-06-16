@@ -94,9 +94,6 @@
   .cut-card.editing { border-color: var(--accent); }
   .cut-card-header { display: flex; align-items: center; gap: 8px; padding: 9px 10px; cursor: pointer; user-select: none; }
   .cut-num { font-family: var(--mono); font-size: 14px; font-weight: 700; color: var(--accent); background: var(--accent-dim); padding: 4px 8px; border-radius: 4px; flex-shrink: 0; }
-  .cut-thumb-wrap { position: relative; width: 80px; height: 50px; flex-shrink: 0; background: #fff; border: 1px solid var(--border); border-radius: 4px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
-  .cut-thumb-wrap img { width: 100%; height: 100%; object-fit: contain; }
-  .cut-time-overlay { position: absolute; bottom: 1px; right: 1px; background: rgba(0,0,0,0.7); color: #fff; font-size: 8px; padding: 1px 3px; border-radius: 2px; font-family: var(--mono); transform: scale(0.9); transform-origin: bottom right; white-space: nowrap; }
 
   .cut-summary { flex: 1; min-width: 0; }
   .cut-title-preview { font-size: 12px; font-weight: 400; color: var(--text-mid); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.4; }
@@ -207,6 +204,24 @@
   .dlg-input:focus { border-color: var(--accent); }
   .dlg-actions { display: flex; gap: 8px; margin-top: 16px; }
   .dlg-select { background: var(--bg); border: 1px solid var(--border-light); border-radius: 7px; color: var(--text); font-family: var(--jp); font-size: 14px; padding: 10px 12px; width: 100%; outline: none; margin-bottom: 16px; }
+
+  /* ===== PRINT / EXPORT OVERLAY ===== */
+  .export-overlay { display: none; position: fixed; inset: 0; background: #fff; z-index: 9999; overflow-y: auto; color: #111; font-family: var(--jp); }
+  .export-overlay.open { display: block; }
+  .export-header { position: sticky; top: 0; background: #f8f8f8; border-bottom: 1px solid #ddd; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; z-index: 10000; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+  .export-header button { padding: 8px 16px; font-size: 14px; font-family: var(--jp); cursor: pointer; border-radius: 6px; border: 1px solid #ccc; background: #fff; color: #333; }
+  .export-header button.primary { background: var(--accent); border: none; font-weight: bold; color: #141414; }
+  .export-content { padding: 24px; font-size: 12px; line-height: 1.6; background: #fff; min-height: 100vh; }
+  
+  @media print {
+    #screen-list, #screen-editor, .fab, .modal-overlay, .dlg-overlay, .draw-overlay { display: none !important; }
+    .export-overlay { position: static !important; display: block !important; overflow: visible !important; height: auto !important; }
+    .export-header { display: none !important; }
+    .export-content { padding: 0 !important; }
+    .pdf-table { page-break-inside: auto; }
+    tr { page-break-inside: avoid; page-break-after: auto; }
+    @page { margin: 10mm; }
+  }
 </style>
 </head>
 <body>
@@ -215,10 +230,7 @@
 <div class="screen active" id="screen-list">
   <div class="sticky-header">
     <div class="logo">CONTE</div>
-    <div style="display:flex; gap:8px;">
-      <button class="btn-new" style="background:transparent;border:1px solid var(--border);color:var(--text-mid);" onclick="openBackupDlg()">⚙ データ管理</button>
-      <button class="btn-new" onclick="createProject()">＋ 新規企画</button>
-    </div>
+    <button class="btn-new" onclick="createProject()">＋ 新規企画</button>
   </div>
   <div class="list-body">
     <div class="list-empty" id="listEmpty"><div class="list-empty-icon">🎬</div>企画がまだありません<br>「新規企画」からはじめましょう</div>
@@ -297,16 +309,22 @@
       <div id="scriptStatsArea"></div>
 
       <div style="display:flex; gap:16px; flex-wrap:wrap; margin-top:16px;">
-        <!-- ① タイムラインに組み込み済みの原稿 -->
         <div style="flex:1; min-width:280px;">
           <div class="edit-section-title" style="margin-top:0;">🎬 カット割り済みの原稿（本編）</div>
-          <div id="scriptTimelineArea" style="background:var(--card); border:1px solid var(--border); border-radius:8px; padding:16px; max-height:400px; overflow-y:auto;"></div>
+          <div id="scriptTimelineArea" style="background:var(--card); border:1px solid var(--border); border-radius:8px; padding:16px; max-height:500px; overflow-y:auto;"></div>
         </div>
 
-        <!-- ② 未割り当ての原稿ストック -->
         <div style="flex:1; min-width:280px;">
           <div class="edit-section-title" style="margin-top:0;">📝 未割り当ての原稿（ストック）</div>
-          <textarea class="field-textarea" id="globalScriptInput" rows="6" style="background:var(--bg); border:1px solid var(--border-light); border-radius:8px; padding:12px; margin-bottom:12px;" placeholder="ここに原稿をベタ貼りしてください。カットに割り当てるとここから消えます。" oninput="updateScriptStats()"></textarea>
+          
+          <!-- UI改善：ベタ貼り用の入力欄を視覚的に分離 -->
+          <div style="background:var(--bg); border:1px dashed var(--accent); border-radius:8px; padding:12px; margin-bottom:20px;">
+            <div style="font-size:11px; color:var(--accent); margin-bottom:8px; font-weight:bold;">▼ ここに原稿をベタ貼りしてください</div>
+            <textarea class="field-textarea" id="globalScriptInput" rows="5" style="background:transparent; border:none; color:var(--text); width:100%; outline:none; resize:none;" placeholder="ナレーションやセリフの原稿を貼り付けます。改行すると自動で下のカードに分割されます。" oninput="updateScriptStats()"></textarea>
+          </div>
+
+          <!-- UI改善：カードリストエリアを明示 -->
+          <div style="font-size:11px; color:var(--text-dim); margin-bottom:8px; font-family:var(--mono);">▼ カット作成用カード (タップで追加)</div>
           <div id="scriptCardsArea"></div>
         </div>
       </div>
@@ -338,6 +356,16 @@
       </div>
     </div>
   </div>
+</div>
+
+<!-- EXPORT OVERLAY -->
+<div class="export-overlay" id="exportOverlay">
+  <div class="export-header">
+    <button onclick="closeExport()">← 戻る</button>
+    <div style="font-weight:bold; font-size:14px; color:#333;">プレビュー / 書き出し</div>
+    <button class="primary" onclick="window.print()">📄 PDFを作成</button>
+  </div>
+  <div class="export-content" id="exportContent"></div>
 </div>
 
 <!-- FAB -->
@@ -527,42 +555,10 @@
   </div>
 </div>
 
-<!-- BACKUP / RESTORE DIALOG -->
-<div class="dlg-overlay" id="dlgBackup">
-  <div class="dlg-box" style="max-width:360px;">
-    <div class="dlg-title">データのバックアップ</div>
-    <div class="dlg-msg">
-      すべての企画データ（画像・コンテ絵を含む）を1つのファイルに書き出せます。<br>
-      アプリのバージョンが変わってもこのファイルから復元できます。
-    </div>
-    <button class="btn-primary" style="width:100%; margin-bottom:10px;" onclick="exportBackup()">📤 すべて書き出す（.json）</button>
-    <label class="btn-secondary" style="width:100%; display:block; text-align:center; box-sizing:border-box; cursor:pointer; margin-bottom:6px;">
-      📥 ファイルから読み込む
-      <input type="file" accept="application/json" id="backupFileInput" style="display:none" onchange="onBackupFileSelected(event)">
-    </label>
-    <div class="dlg-msg" style="margin-top:4px; font-size:11px;">
-      ※ 読み込み時に「追加」か「全部置き換え」を選べます
-    </div>
-    <div class="dlg-actions" style="margin-top:14px;">
-      <button class="btn-secondary" onclick="closeDlg('dlgBackup')">閉じる</button>
-    </div>
-  </div>
-</div>
-
-<!-- IMPORT MODE DIALOG -->
-<div class="dlg-overlay" id="dlgImportMode">
-  <div class="dlg-box">
-    <div class="dlg-title">読み込み方法を選択</div>
-    <div class="dlg-msg" id="dlgImportModeMsg"></div>
-    <div class="dlg-actions" style="flex-direction:column; gap:8px;">
-      <button class="btn-primary" style="width:100%" onclick="doImportBackup('merge')">既存に追加する</button>
-      <button class="btn-secondary" style="width:100%; color:var(--red); border-color:var(--red);" onclick="doImportBackup('replace')">全部置き換える（既存は削除）</button>
-      <button class="btn-secondary" style="width:100%" onclick="closeDlg('dlgImportMode')">キャンセル</button>
-    </div>
-  </div>
-</div>
-
 <div class="toast" id="toast"></div>
+
+<!-- バージョン確認用（必要なくなったら消してOKです） -->
+<div id="version-check" style="position:fixed; bottom:5px; right:5px; font-size:8px; color:#444; font-family:monospace; pointer-events:none; z-index:99999;">v3</div>
 
 <script>
 if ('serviceWorker' in navigator) {
@@ -590,7 +586,7 @@ let selectedCams = new Set();
 let selectedAngle = '';
 let currentImageData = null;
 let scriptTargetInputId = null;
-let currentScriptStockLines = []; // 原稿選択用
+let currentScriptStockLines = []; 
 
 function getFps() {
   const p = currentProject();
@@ -646,7 +642,6 @@ function currentProject() { return projects.find(p => p.id === currentProjectId)
 
 function saveCurrentProject() {
   const p = currentProject(); if (!p) return;
-  // 修正：タイトルも確実に保存
   p.title = document.getElementById('projectTitle').value;
   p.type = selectedType;
   p.clientName = document.getElementById('clientName').value; 
@@ -1278,16 +1273,30 @@ function renderPreviewCutRow(cut, ci, isPdf = false) {
   if (cam) vHtmlInner += `<div style="font-size:10px; color:#888;">CAM: ${escHtml(cam)}</div>`;
   if (cut.action) vHtmlInner += `<div style="margin-top:6px; white-space:pre-wrap;">${escHtml(cut.action)}</div>`;
 
-  let imgHtmlInner = `
-    <div style="display:flex; justify-content:center;">
-      <div style="width:100%; max-width:160px; aspect-ratio:16/9; background:#fff; border:1px solid var(--border); border-radius:4px; overflow:hidden; display:flex; align-items:center; justify-content:center;">
-        ${cut.image ? `<img src="${cut.image}" style="width:100%;height:100%;object-fit:contain;" alt="">` : `<span style="color:#ddd; font-size:14px;">No Image</span>`}
+  let imgHtmlInner = '';
+  if (isPdf) {
+    // 印刷時はflexやaspect-ratioが潰れるので、超シンプルな画像タグにする
+    imgHtmlInner = `
+      <div style="text-align:center;">
+        ${cut.image ? `<img src="${cut.image}" style="max-width:100%; max-height:120px; width:auto; height:auto; display:block; margin:0 auto;" alt="">` : `<span style="color:#999; font-size:12px;">No Image</span>`}
+        <div style="font-size:10px; color:#666; font-family:monospace; margin-top:4px;">
+          (${f_dur} / ${f_accum})
+        </div>
       </div>
-      <div style="font-size:10px; color:var(--text-mid); font-family:var(--mono); display:flex; align-items:flex-end; padding-left:4px; padding-bottom:2px; white-space:nowrap;">
-        (${f_dur} / ${f_accum})
+    `;
+  } else {
+    // Webのプレビュー画面用
+    imgHtmlInner = `
+      <div style="display:flex; justify-content:center;">
+        <div style="width:100%; max-width:160px; aspect-ratio:16/9; background:#fff; border:1px solid var(--border); border-radius:4px; overflow:hidden; display:flex; align-items:center; justify-content:center;">
+          ${cut.image ? `<img src="${cut.image}" style="width:100%;height:100%;object-fit:contain;" alt="">` : `<span style="color:#ddd; font-size:14px;">No Image</span>`}
+        </div>
+        <div style="font-size:10px; color:var(--text-mid); font-family:var(--mono); display:flex; align-items:flex-end; padding-left:4px; padding-bottom:2px; white-space:nowrap;">
+          (${f_dur} / ${f_accum})
+        </div>
       </div>
-    </div>
-  `;
+    `;
+  }
 
   let aHtmlInner = '';
   if (cut.audio) {
@@ -1325,7 +1334,7 @@ function renderPreviewCutRow(cut, ci, isPdf = false) {
   return html;
 }
 
-// ===== SCRIPT VIEW (ストックから引くと消えるバーンダウン式) =====
+// ===== SCRIPT VIEW =====
 function removeLineFromStockByIndex(idx) {
   const inputEl = document.getElementById('globalScriptInput');
   let lines = inputEl.value.split('\n');
@@ -1339,8 +1348,9 @@ function updateScriptStats() {
   const fps = getFps();
   const cuts = getAllCuts(p);
 
-  // ① 割り当て済み（本編）の抽出
-  let timelineChars = 0;
+  // ① 割り当て済み（本編）
+  let timelineActualChars = 0;
+  let timelineReadChars = 0;
   let timelineHtml = '';
   cuts.forEach((c, i) => {
     let texts = [];
@@ -1351,7 +1361,10 @@ function updateScriptStats() {
 
     let combined = texts.join('\n');
     if(combined) {
-      timelineChars += combined.replace(/【.*?】/g, '').replace(/\s+/g, '').length;
+      const pureText = combined.replace(/【.*?】/g, '').replace(/\s+/g, '');
+      timelineActualChars += pureText.length;
+      for(let j=0; j<pureText.length; j++) timelineReadChars += pureText[j].match(/[一-龠々]/) ? 2 : 1;
+      
       timelineHtml += `<div style="font-size:12px; margin-bottom:12px; border-bottom:1px solid var(--border); padding-bottom:12px; line-height:1.6;">
         <span style="color:var(--accent); font-weight:bold; font-family:var(--mono); margin-right:8px;">C${String(i+1).padStart(2,'0')}</span>
         <span style="white-space:pre-wrap; color:var(--text);">${escHtml(combined)}</span>
@@ -1361,19 +1374,23 @@ function updateScriptStats() {
   if(!timelineHtml) timelineHtml = `<div style="color:var(--text-dim); text-align:center; padding:20px 0;">まだカットに原稿がありません</div>`;
   document.getElementById('scriptTimelineArea').innerHTML = timelineHtml;
 
-  // ② ストック側の計算
+  // ② ストック側
   if (document.getElementById('tab-script').classList.contains('active')) {
     p.script = document.getElementById('globalScriptInput').value;
-    saveProjects(); // 原稿の自動保存（タブを離れる前に閉じても消えないように）
+    saveProjects(); 
   }
   const stockText = p.script || '';
   currentScriptStockLines = stockText.split('\n');
-  let stockChars = 0;
+  let stockActualChars = 0;
+  let stockReadChars = 0;
   let cardsHtml = '';
   
   currentScriptStockLines.forEach((line, idx) => {
     if(line.trim() !== '') {
-      stockChars += line.replace(/\s+/g, '').length;
+      const pureText = line.replace(/\s+/g, '');
+      stockActualChars += pureText.length;
+      for(let j=0; j<pureText.length; j++) stockReadChars += pureText[j].match(/[一-龠々]/) ? 2 : 1;
+
       cardsHtml += `
         <div class="script-card">
           <div class="script-card-text">${escHtml(line)}</div>
@@ -1384,12 +1401,13 @@ function updateScriptStats() {
       `;
     }
   });
-  if(stockChars === 0) cardsHtml = `<div style="text-align:center; color:var(--text-dim); padding:20px;">未割り当ての原稿はありません</div>`;
+  if(stockActualChars === 0) cardsHtml = `<div style="text-align:center; color:var(--text-dim); padding:20px;">未割り当ての原稿はありません</div>`;
   document.getElementById('scriptCardsArea').innerHTML = cardsHtml;
 
-  // ③ 全体の合算と目安表示
-  const totalChars = timelineChars + stockChars;
-  const estSec = totalChars / 5;
+  // ③ 全体計算
+  const totalActualChars = timelineActualChars + stockActualChars;
+  const totalReadChars = timelineReadChars + stockReadChars;
+  const estSec = totalReadChars / 5;
   const estDurStr = framesToTimecode(estSec * fps, fps);
   const totalDurFrames = cuts.length > 0 ? cuts[cuts.length-1]._accumFrames : 0;
   const totalDurStr = framesToTimecode(totalDurFrames, fps);
@@ -1398,7 +1416,10 @@ function updateScriptStats() {
     <div style="background:var(--card-hover); padding:16px; border-radius:8px; border:1px solid var(--border);">
       <div style="display:flex; justify-content:space-between; margin-bottom:10px; border-bottom:1px solid var(--border); padding-bottom:10px;">
         <span style="color:var(--text-mid);">総文字数 (本編＋ストック)</span>
-        <span style="font-weight:bold; font-size:16px; color:var(--text);">${totalChars} 文字</span>
+        <div style="text-align:right;">
+          <div style="font-weight:bold; font-size:16px; color:var(--text);">${totalActualChars} 文字</div>
+          <div style="font-size:10px; color:var(--text-dim); margin-top:2px;">(読み尺換算：約${totalReadChars}文字)</div>
+        </div>
       </div>
       <div style="display:flex; justify-content:space-between; margin-bottom:10px; border-bottom:1px solid var(--border); padding-bottom:10px;">
         <span style="color:var(--text-mid);">読むのに必要な目安尺 <span style="font-size:10px;">(約5文字/秒)</span></span>
@@ -1413,16 +1434,14 @@ function updateScriptStats() {
   document.getElementById('scriptStatsArea').innerHTML = statsHtml;
 }
 
-// ストックから新規カット作成（同時にストックから削除）
 function openAddCutFromScript(idx) {
   const text = currentScriptStockLines[idx];
   openAddCut('top');
   document.getElementById('m_a_dialogue').value = text;
   removeLineFromStockByIndex(idx);
-  updateScriptStats(); // 背景の表示を更新
+  updateScriptStats(); 
 }
 
-// 既存カットで「原稿から引く」リストを開く
 function openScriptSelector(targetId) {
   scriptTargetInputId = targetId;
   const p = currentProject();
@@ -1447,7 +1466,6 @@ function openScriptSelector(targetId) {
   openDlg('dlgSelectScript');
 }
 
-// ストックから引用して入力欄へ（同時にストックから削除）
 function doSelectScript(idx) {
   if(!scriptTargetInputId) return;
   const text = currentScriptStockLines[idx];
@@ -1461,14 +1479,14 @@ function doSelectScript(idx) {
   showToast('引用しました');
 }
 
-// ===== EXPORT =====
+// ===== EXPORT OVERLAY =====
 function exportDoc() {
   const p = currentProject(); if (!p) return;
   const now = new Date().toLocaleDateString('ja-JP');
   function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
   
   const fpsStr = p.fps ? `${p.fps} fps` : '';
-  const infoRows = [['タイトル',p.title],['タイプ',p.type],['クライアント',p.clientName],['楽曲',p.songTitle],['解像度',p.resolution],['フレームレート',fpsStr],['尺 (全体)',p.duration],['コンセプト',p.concept],['キャスト',p.cast],['ロケ',p.location],['演出',p.direction],['納期',p.deadline]].filter(([,v])=>v).map(([k,v])=>`<tr><td class="key">${k}</td><td>${esc(v)}</td></tr>`).join('');
+  const infoRows = [['タイトル',p.title],['タイプ',p.type],['クライアント',p.clientName],['楽曲',p.songTitle],['解像度',p.resolution],['フレームレート',fpsStr],['尺 (全体)',p.duration],['コンセプト',p.concept],['キャスト',p.cast],['ロケ',p.location],['演出',p.direction],['納期',p.deadline]].filter(([,v])=>v).map(([k,v])=>`<tr><td class="key-print">${k}</td><td>${esc(v)}</td></tr>`).join('');
 
   let tableHtml = `<table class="pdf-table"><tr><th style="width:30%">ト書き / 画面指示</th><th style="width:40%">画面</th><th style="width:30%">音声 / セリフ</th></tr>`;
   (p.cuts||[]).forEach((cut,ci)=>{ tableHtml += renderPreviewCutRow(cut, ci, true); });
@@ -1478,31 +1496,32 @@ function exportDoc() {
   });
   tableHtml += `</table>`;
 
-  const html=`<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><title>${esc(p.title||'企画書')}</title>
+  const html=`
 <style>
-body{font-family:'Hiragino Sans','Yu Gothic','Meiryo',sans-serif;color:#1a1a1a;margin:0;padding:24px 32px;font-size:12px;line-height:1.6;}
-h1{font-size:22px;font-weight:800;margin:0 0 4px;}
-.meta{font-size:11px;color:#888;margin-bottom:20px;font-family:monospace;}
-.section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#888;border-bottom:1px solid #ddd;padding-bottom:4px;margin:20px 0 10px;}
-.info-table{width:100%;border-collapse:collapse;margin-bottom:20px;}
-.info-table td{padding:4px 8px;vertical-align:top;font-size:12px;border-bottom:1px solid #f0f0f0;}
-.info-table td.key{width:80px;color:#888;font-family:monospace;font-size:10px;white-space:nowrap;}
-.pdf-table{width:100%;border-collapse:collapse;table-layout:fixed;}
-.pdf-table th, .pdf-table td{border-left:1px solid #333; border-right:1px solid #333; border-top:none; border-bottom:none; padding:10px;vertical-align:top;word-wrap:break-word;}
-.pdf-table th{background:#f0f0f0;font-size:11px;text-align:center; border-bottom:1px solid #333;}
-.seq-label-print{font-weight:700;font-size:12px;color:#111;background:#e0e0e0;padding:4px 10px;display:inline-block; margin-top:10px;}
-@media print{body{padding:0;} .pdf-table {page-break-inside:auto;} tr {page-break-inside:avoid; page-break-after:auto;}}
-</style></head><body>
+.export-content h1 { font-size:22px; font-weight:800; margin:0 0 4px; color:#111; }
+.export-content .meta { font-size:11px; color:#888; margin-bottom:20px; font-family:monospace; }
+.export-content .section-title { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:#888; border-bottom:1px solid #ddd; padding-bottom:4px; margin:20px 0 10px; }
+.export-content .info-table { width:100%; border-collapse:collapse; margin-bottom:20px; }
+.export-content .info-table td { padding:4px 8px; vertical-align:top; font-size:12px; border-bottom:1px solid #f0f0f0; color:#333; }
+.export-content .info-table td.key-print { width:80px; color:#888; font-family:monospace; font-size:10px; white-space:nowrap; }
+.export-content .pdf-table { width:100%; border-collapse:collapse; table-layout:fixed; }
+.export-content .pdf-table th, .export-content .pdf-table td { border-left:1px solid #333; border-right:1px solid #333; border-top:none; border-bottom:none; padding:10px; vertical-align:top; word-wrap:break-word; color:#333; }
+.export-content .pdf-table th { background:#f0f0f0; font-size:11px; text-align:center; border-bottom:1px solid #333; color:#111; }
+.export-content .seq-label-print { font-weight:700; font-size:12px; color:#111; background:#e0e0e0; padding:4px 10px; display:inline-block; margin-top:10px; }
+</style>
 <h1>${esc(p.title||'企画書')}</h1>
 <div class="meta">作成日：${now} カット ${countCuts(p)}</div>
 ${infoRows?`<div class="section-title">企画情報</div><table class="info-table">${infoRows}</table>`:''}
 <div class="section-title">絵コンテ</div>
 ${countCuts(p)>0 ? tableHtml : '<p style="color:#aaa;font-size:12px">カットなし</p>'}
-</body></html>`;
+`;
 
-  const win=window.open('','_blank');
-  if(win){win.document.write(html);win.document.close();showToast('新タブで開きました → 共有→PDFを作成');}
-  else{const blob=new Blob([html],{type:'text/html;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`${p.title||'企画書'}.html`;a.click();URL.revokeObjectURL(url);showToast('HTMLを保存 → Safariで共有→PDF');}
+  document.getElementById('exportContent').innerHTML = html;
+  document.getElementById('exportOverlay').classList.add('open');
+}
+
+function closeExport() {
+  document.getElementById('exportOverlay').classList.remove('open');
 }
 
 function confirmDelete(title, msg, cb) {
@@ -1519,111 +1538,12 @@ function updateMeta() {
 function escHtml(str) { return (str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function showToast(msg) { const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500); }
 
-['cutModal','dlgNewProject','dlgNewSeq','dlgConfirm','dlgMoveCut','dlgSelectScript','dlgBackup','dlgImportMode'].forEach(id=>{
+['cutModal','dlgNewProject','dlgNewSeq','dlgConfirm','dlgMoveCut','dlgSelectScript'].forEach(id=>{
   document.getElementById(id).addEventListener('click',e=>{if(e.target===document.getElementById(id)) closeDlg(id);});
 });
 document.getElementById('cutModal').addEventListener('click',e=>{if(e.target===document.getElementById('cutModal')) closeCutModal();});
 
-// ===== BACKUP / RESTORE =====
-const APP_DATA_VERSION = 1;
-let pendingImportData = null;
-
-function openBackupDlg() { openDlg('dlgBackup'); }
-
-function exportBackup() {
-  const payload = {
-    app: 'conte-app',
-    dataVersion: APP_DATA_VERSION,
-    exportedAt: new Date().toISOString(),
-    projects: projects
-  };
-  const json = JSON.stringify(payload, null, 2);
-  const blob = new Blob([json], {type:'application/json'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  const dateStr = new Date().toISOString().slice(0,10);
-  a.href = url;
-  a.download = `conte_backup_${dateStr}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
-  showToast('バックアップを書き出しました');
-}
-
-function onBackupFileSelected(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = ev => {
-    try {
-      const data = JSON.parse(ev.target.result);
-      let importedProjects;
-      if (Array.isArray(data)) {
-        // 古い形式（配列そのまま）にも対応
-        importedProjects = data;
-      } else if (data && Array.isArray(data.projects)) {
-        importedProjects = data.projects;
-      } else {
-        showToast('このファイルは読み込めませんでした');
-        return;
-      }
-      // 最低限のバリデーション・補完
-      importedProjects = importedProjects.map(p => ({
-        id: p.id || ('p_'+Date.now()+'_'+Math.random().toString(36).slice(2,7)),
-        title: p.title || '',
-        type: p.type || '',
-        clientName: p.clientName || '',
-        songTitle: p.songTitle || '',
-        resolution: p.resolution || '',
-        fps: p.fps || '',
-        duration: p.duration || '',
-        concept: p.concept || '',
-        cast: p.cast || '',
-        location: p.location || '',
-        direction: p.direction || '',
-        deadline: p.deadline || '',
-        script: p.script || '',
-        cuts: p.cuts || [],
-        sequences: p.sequences || [],
-        updatedAt: p.updatedAt || Date.now()
-      }));
-      pendingImportData = importedProjects;
-      document.getElementById('dlgImportModeMsg').textContent =
-        `${importedProjects.length} 件の企画が見つかりました。どう取り込みますか？`;
-      closeDlg('dlgBackup');
-      openDlg('dlgImportMode');
-    } catch (err) {
-      showToast('ファイルの形式が正しくありません');
-    } finally {
-      e.target.value = '';
-    }
-  };
-  reader.readAsText(file);
-}
-
-function doImportBackup(mode) {
-  if (!pendingImportData) return;
-  if (mode === 'replace') {
-    projects = pendingImportData;
-  } else {
-    // 追加：ID重複を避けるため、既存と被るIDは振り直す
-    const existingIds = new Set(projects.map(p=>p.id));
-    pendingImportData.forEach(p => {
-      if (existingIds.has(p.id)) {
-        p.id = 'p_'+Date.now()+'_'+Math.random().toString(36).slice(2,7);
-      }
-      projects.push(p);
-    });
-  }
-  saveProjects();
-  renderProjectList();
-  closeDlg('dlgImportMode');
-  pendingImportData = null;
-  showToast(mode==='replace' ? '置き換えました' : '追加しました');
-}
-
-
 loadProjects(); renderProjectList();
 </script>
-  <div id="version-check" style="position:fixed; bottom:5px; right:5px; font-size:8px; color:#444; font-family:monospace; pointer-events:none;">v1</div>
 </body>
 </html>
