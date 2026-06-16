@@ -189,8 +189,8 @@
   /* SCRIPT CARD */
   .script-card { background: var(--bg); border: 1px solid var(--border-light); border-radius: 8px; padding: 12px; margin-bottom: 8px; display: flex; flex-direction: column; gap: 8px; }
   .script-card-text { font-size: 13px; color: var(--text); line-height: 1.6; white-space: pre-wrap; }
-  .script-card-actions { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
-  .script-btn { background: var(--surface); border: 1px solid var(--border); color: var(--text-mid); border-radius: 4px; padding: 6px 12px; font-size: 11px; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: all 0.15s; }
+  .script-card-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+  .script-btn { background: var(--surface); border: 1px solid var(--border); color: var(--text-mid); border-radius: 4px; padding: 6px 12px; font-size: 11px; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: all 0.15s; flex: 1; text-align: center; justify-content: center; }
   .script-btn:hover { border-color: var(--accent); color: var(--accent); }
   
   .script-pull-btn { background: var(--bg); border: 1px solid var(--border-light); color: var(--text-mid); padding: 4px 8px; border-radius: 4px; font-size: 10px; cursor: pointer; transition: 0.15s; }
@@ -282,6 +282,7 @@
     <div class="tab" onclick="switchTab('vcon',this)">▶ Vコン</div>
   </div>
   <div class="editor-main">
+    <!-- INFO TAB -->
     <div class="tab-panel active" id="tab-info">
       <div class="field-group">
         <div class="field-row">
@@ -339,49 +340,46 @@
         </div>
         <div class="field-row"><div class="field-label">クライアント / 参照元</div><input class="field-input" id="clientName" type="text" placeholder="例：株式会社〇〇 / 資料URLなど"></div>
         <div class="field-row"><div class="field-label">楽曲名・原曲情報</div><input class="field-input" id="songTitle" type="text" placeholder="例：アーティスト名「曲名」"></div>
-        <div class="field-row"><div class="field-label">コンセプト・世界観</div><textarea class="field-textarea" id="concept" rows="3" placeholder="退廃的な都市、孤独な主人公が夜を歩く…"></textarea></div>
-      </div>
-      <div class="field-group">
-        <div class="field-row"><div class="field-label">キャスト / キャラクター</div><textarea class="field-textarea" id="cast" rows="2" placeholder="A（主人公）、B（友人）…"></textarea></div>
-        <div class="field-row"><div class="field-label">ロケーション・舞台</div><input class="field-input" id="location" type="text" placeholder="夜の渋谷、廃工場、自室"></div>
-      </div>
-      <div class="field-group">
-        <div class="field-row"><div class="field-label">監督 / 演出メモ</div><textarea class="field-textarea" id="direction" rows="2" placeholder="全体の演出方針、色味、雰囲気…"></textarea></div>
         <div class="field-row"><div class="field-label">納期・スケジュール</div><input class="field-input" id="deadline" type="text" placeholder="2025年3月公開予定"></div>
       </div>
+
+      <!-- 新規：構成ブロック（シーケンス連動）エリア -->
+      <div class="edit-section-title" style="margin-top:24px; color:var(--accent);">📝 構成（箱書き）</div>
+      <div style="font-size:11px; color:var(--text-mid); margin-bottom:12px; line-height:1.5;">
+        ここで作成した構成ブロックは、自動的にカットタブの「シーケンス（フォルダ）」になります。<br>
+        まずは「起承転結」や「Aメロ・サビ」などの大きなハコを作りましょう。
+      </div>
+      <div id="outlineBlocksArea"></div>
+      <button class="btn-add-cut" style="border-style:solid;" onclick="addOutlineBlock()">＋ 構成ブロック（シーケンス）を追加</button>
     </div>
 
+    <!-- SCRIPT TAB -->
     <div class="tab-panel" id="tab-script">
-      
       <div style="background: var(--accent-dim); border-left: 3px solid var(--accent); padding: 10px 14px; font-size: 11px; color: var(--text-mid); margin-bottom: 16px; line-height: 1.5;">
         💡 <b>使い方ガイド</b><br>
         原稿は、ここで先にベタ貼りして「カードからカットを追加」していくことも、<br>
         逆にカット編集画面で直接書き込んでいくこともできます。<br>
         （どちらの手順で作っても、総文字数や目安尺は自動で合算されます）
       </div>
-
       <div id="scriptStatsArea"></div>
-
       <div style="display:flex; gap:16px; flex-wrap:wrap; margin-top:16px;">
         <div style="flex:1; min-width:280px;">
           <div class="edit-section-title" style="margin-top:0;">🎬 現在コンテに入っているセリフ・原稿 (自動抽出)</div>
           <div id="scriptTimelineArea" style="background:var(--card); border:1px solid var(--border); border-radius:8px; padding:16px; max-height:500px; overflow-y:auto;"></div>
         </div>
-
         <div style="flex:1; min-width:280px;">
           <div class="edit-section-title" style="margin-top:0;">📝 原稿のストックエリア (未割り当て)</div>
-          
           <div style="background:var(--bg); border:1px dashed var(--accent); border-radius:8px; padding:12px; margin-bottom:20px;">
             <div style="font-size:11px; color:var(--accent); margin-bottom:8px; font-weight:bold;">▼ ここに原稿をベタ貼りしてください</div>
             <textarea class="field-textarea" id="globalScriptInput" rows="5" style="background:transparent; border:none; color:var(--text); width:100%; outline:none; resize:none;" placeholder="ナレーションやセリフの原稿を貼り付けます。改行すると自動で下のカードに分割されます。" oninput="updateScriptStats()"></textarea>
           </div>
-
-          <div style="font-size:11px; color:var(--text-dim); margin-bottom:8px; font-family:var(--mono);">▼ カット作成用カード (追加先を選択)</div>
+          <div style="font-size:11px; color:var(--text-dim); margin-bottom:8px; font-family:var(--mono);">▼ カット作成用カード</div>
           <div id="scriptCardsArea"></div>
         </div>
       </div>
     </div>
 
+    <!-- CUTS TAB -->
     <div class="tab-panel" id="tab-cuts">
       <div class="cuts-panel-header">
         <div class="cuts-count" id="cutsCount">0 カット</div>
@@ -394,6 +392,7 @@
       <div id="seqList"></div>
     </div>
 
+    <!-- PREVIEW TAB -->
     <div class="tab-panel" id="tab-preview">
       <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px; background:var(--surface); padding:10px 14px; border-radius:8px; border:1px solid var(--border);">
         <span style="font-size:12px; color:var(--text-dim);">🔍 ズーム表示</span>
@@ -444,26 +443,20 @@
       </div>
 
       <div id="vconPlayer" style="display:none;">
-        <!-- canvas area -->
         <div style="position:relative;background:#fff;border-radius:8px;overflow:hidden;margin-bottom:8px;" id="vconCanvasWrap">
           <canvas id="vconCanvas" style="width:100%;display:block;"></canvas>
-          <!-- subtitle overlay -->
           <div id="vconSubs" style="position:absolute;bottom:0;left:0;right:0;padding:8px;pointer-events:none;"></div>
         </div>
-        <!-- cut info bar -->
         <div id="vconCutInfo" style="font-family:var(--mono);font-size:11px;color:var(--text-dim);margin-bottom:6px;padding:0 2px;display:flex;justify-content:space-between;"></div>
-        <!-- seek bar -->
         <div style="position:relative;margin-bottom:10px;">
           <input type="range" id="vconSeek" min="0" value="0" style="width:100%;accent-color:var(--accent);" oninput="onVconSeek(this.value)">
         </div>
-        <!-- controls -->
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
           <button onclick="vconSkip(-1)" style="background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:8px 14px;cursor:pointer;font-size:16px;">⏮</button>
           <button id="vconPlayBtn" onclick="toggleVconPlay()" style="background:var(--accent);border:none;color:#141414;border-radius:8px;padding:8px 20px;cursor:pointer;font-size:16px;font-weight:700;flex:1;">▶</button>
           <button onclick="vconSkip(1)" style="background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:8px 14px;cursor:pointer;font-size:16px;">⏭</button>
           <div id="vconTimeDisplay" style="font-family:var(--mono);font-size:11px;color:var(--text-mid);white-space:nowrap;">00:00:00 / 00:00:00</div>
         </div>
-        <!-- recording indicator -->
         <div id="vconRecordingBar" style="display:none;background:rgba(224,85,85,0.15);border:1px solid var(--red);border-radius:8px;padding:10px 14px;text-align:center;font-size:12px;color:var(--red);font-family:var(--mono);">
           ⏺ 録画中... 最後まで再生したら自動で完了します
         </div>
@@ -471,8 +464,8 @@
       </div>
     </div>
 
-  </div><!-- /editor-main -->
-</div><!-- /screen-editor -->
+  </div>
+</div>
 
 <div class="export-overlay" id="exportOverlay">
   <div class="export-header">
@@ -562,9 +555,9 @@
       <textarea class="edit-input" id="m_a_lyrics" rows="2" placeholder="歌詞テキスト…"></textarea>
     </div>
     
-    <div class="edit-field"><div class="edit-label"><span>🎵</span> BGM</div><input class="edit-input" id="m_a_bgm" type="text" placeholder="BGMタイトルや指示…"></div>
-    <div class="edit-field"><div class="edit-label"><span>💥</span> SE (効果音)</div><input class="edit-input" id="m_a_se" type="text" placeholder="効果音の指示…"></div>
-    <div class="edit-field"><div class="edit-label"><span>🔔</span> SL (サウンドロゴ)</div><input class="edit-input" id="m_a_sl" type="text" placeholder="サウンドロゴ…"></div>
+    <div class="edit-field"><div class="edit-label"><span>🎵</span> BGM <button class="script-pull-btn" onclick="openScriptSelector('m_a_bgm')">📜 原稿から引く</button></div><input class="edit-input" id="m_a_bgm" type="text" placeholder="BGMタイトルや指示…"></div>
+    <div class="edit-field"><div class="edit-label"><span>💥</span> SE (効果音) <button class="script-pull-btn" onclick="openScriptSelector('m_a_se')">📜 原稿から引く</button></div><input class="edit-input" id="m_a_se" type="text" placeholder="効果音の指示…"></div>
+    <div class="edit-field"><div class="edit-label"><span>🔔</span> SL (サウンドロゴ) <button class="script-pull-btn" onclick="openScriptSelector('m_a_sl')">📜 原稿から引く</button></div><input class="edit-input" id="m_a_sl" type="text" placeholder="サウンドロゴ…"></div>
 
     <div class="edit-section-title" style="color:#888; margin-top:24px;">その他</div>
     <div class="edit-field"><div class="edit-label"><span>📌</span> 備考・メモ</div><textarea class="edit-input" id="m_note" rows="2" placeholder="技術的な備考、素材メモなど…"></textarea></div>
@@ -662,7 +655,7 @@
 
 <div class="toast" id="toast"></div>
 
-<div id="version-check" style="position:fixed; bottom:5px; right:5px; font-size:8px; color:#444; font-family:monospace; pointer-events:none; z-index:99999;">v6</div>
+<div id="version-check" style="position:fixed; bottom:5px; right:5px; font-size:8px; color:#444; font-family:monospace; pointer-events:none; z-index:99999;">v9</div>
 
 <script>
 if ('serviceWorker' in navigator) {
@@ -677,11 +670,13 @@ window.addEventListener('DOMContentLoaded', () => {
   document.getElementById('m_durMin').innerHTML = opts60;
   document.getElementById('m_durSec').innerHTML = opts60;
   document.getElementById('m_durFrame').innerHTML = opts60;
+  // プロジェクト総尺セレクト初期化（分は0〜99まで）
   let optsMin = '';
   for(let i=0; i<181; i++) optsMin += `<option value="${i}">${String(i).padStart(3,'0')}</option>`;
   document.getElementById('durProjMin').innerHTML = optsMin;
   document.getElementById('durProjSec').innerHTML = opts60;
   document.getElementById('durProjFrame').innerHTML = opts60;
+  // デフォルトは「目安」
   document.getElementById('durModeGuide').checked = true;
 });
 
@@ -697,7 +692,7 @@ let selectedAngle = '';
 let currentImageData = null;
 let scriptTargetInputId = null;
 let currentScriptStockLines = []; 
-let pendingScriptRemoveIndices = []; 
+let pendingScriptRemoveIndices = []; // キャンセル対応用
 
 function isVerticalProject() {
   const p = currentProject();
@@ -753,7 +748,12 @@ function loadProjects() {
     const r = localStorage.getItem(STORAGE_KEY);
     if (r) projects = JSON.parse(r);
   } catch(e) { projects = []; }
-  projects.forEach(p => { if (!p.cuts) p.cuts = []; if (!p.sequences) p.sequences = []; if (!p.script) p.script = ''; });
+  projects.forEach(p => { 
+    if (!p.cuts) p.cuts = []; 
+    if (!p.sequences) p.sequences = []; 
+    if (!p.script) p.script = ''; 
+    // 互換性担保: 古いoutlineがあれば最初のシーケンス等に変換するか捨てるかだが、今回は無視
+  });
 }
 function currentProject() { return projects.find(p => p.id === currentProjectId) || null; }
 
@@ -769,10 +769,6 @@ function saveCurrentProject() {
   p.durProjSec   = document.getElementById('durProjSec').value;
   p.durProjFrame = document.getElementById('durProjFrame').value;
   p.durMode      = document.querySelector('input[name="durMode"]:checked')?.value || 'guide';
-  p.concept = document.getElementById('concept').value;
-  p.cast = document.getElementById('cast').value;
-  p.location = document.getElementById('location').value;
-  p.direction = document.getElementById('direction').value;
   p.deadline = document.getElementById('deadline').value;
   
   if (document.getElementById('tab-script').classList.contains('active')) {
@@ -784,33 +780,37 @@ function saveCurrentProject() {
 }
 
 document.addEventListener('input', e => { 
-  if (e.target.closest('#screen-editor') && e.target.id !== 'globalScriptInput') saveCurrentProject(); 
+  if (e.target.closest('#screen-editor') && e.target.id !== 'globalScriptInput' && !e.target.closest('#outlineBlocksArea')) saveCurrentProject(); 
 });
 
 function setRes(val) { document.getElementById('resolution').value = val; saveCurrentProject(); }
 function setFps(val) {
   document.getElementById('fps').value = val;
   saveCurrentProject();
-  updateFrameSelects();
+  updateFrameSelects(); // fpsが変わったらカットのフレームセレクトも更新
   updateDurationStatus();
 }
 
 function saveDurMode() { saveCurrentProject(); }
 
+// fpsに合わせてフレームセレクトの選択肢上限を更新
 function updateFrameSelects() {
   const fps = Math.round(getFps());
   let optsFrame = '';
   for(let i=0; i<fps; i++) optsFrame += `<option value="${i}">${String(i).padStart(2,'0')}</option>`;
+  // カットモーダルのフレームセレクト
   const mFrame = document.getElementById('m_durFrame');
   const mFrameVal = mFrame.value;
   mFrame.innerHTML = optsFrame;
   mFrame.value = Math.min(parseInt(mFrameVal)||0, fps-1);
+  // プロジェクト総尺のフレームセレクト
   const pFrame = document.getElementById('durProjFrame');
   const pFrameVal = pFrame.value;
   pFrame.innerHTML = optsFrame;
   pFrame.value = Math.min(parseInt(pFrameVal)||0, fps-1);
 }
 
+// 残り尺ステータスを更新（マスト時のみ表示）
 function updateDurationStatus() {
   const statusEl = document.getElementById('durationStatus');
   const p = currentProject(); if (!p) { statusEl.style.display='none'; return; }
@@ -911,7 +911,7 @@ function doCreateProject() {
   const title = document.getElementById('dlgProjectTitle').value.trim();
   if (!title) { document.getElementById('dlgProjectTitle').focus(); return; }
   const id = 'p_'+Date.now();
-  projects.push({ id, title, type:'', clientName:'', songTitle:'', resolution:'', fps:'', duration:'', concept:'', cast:'', location:'', direction:'', deadline:'', script:'', cuts:[], sequences:[], updatedAt:Date.now() });
+  projects.push({ id, title, type:'', clientName:'', songTitle:'', resolution:'', fps:'', duration:'', deadline:'', script:'', cuts:[], sequences:[], updatedAt:Date.now() });
   saveProjects(); closeDlg('dlgNewProject'); openProject(id);
 }
 function doDeleteProject(id) {
@@ -930,10 +930,6 @@ function openProject(id) {
   document.getElementById('durProjFrame').value = p.durProjFrame || '0';
   const durMode = p.durMode || 'guide';
   document.getElementById(durMode === 'must' ? 'durModeMust' : 'durModeGuide').checked = true;
-  document.getElementById('concept').value = p.concept||'';
-  document.getElementById('cast').value = p.cast||'';
-  document.getElementById('location').value = p.location||'';
-  document.getElementById('direction').value = p.direction||'';
   document.getElementById('deadline').value = p.deadline||'';
   document.getElementById('globalScriptInput').value = p.script||'';
   
@@ -945,6 +941,7 @@ function openProject(id) {
   document.getElementById('tab-info').classList.add('active');
   document.getElementById('fab').classList.add('hidden');
   calcDurations();
+  renderOutlineBlocks();
   renderCuts(); updateMeta(); updateFrameSelects(); updateDurationStatus(); showScreen('editor');
 }
 function goBack() { saveCurrentProject(); renderProjectList(); showScreen('list'); }
@@ -966,6 +963,43 @@ function selectType(el, val) {
   saveCurrentProject();
 }
 
+// ===== 構成ブロック (シーケンスと連動) =====
+function renderOutlineBlocks() {
+  const p = currentProject(); if(!p) return;
+  const area = document.getElementById('outlineBlocksArea');
+  if (p.sequences.length === 0) {
+    area.innerHTML = `<div style="text-align:center; color:var(--text-dim); padding:16px; font-size:12px;">ブロックがありません。<br>下のボタンから追加してください。</div>`;
+    return;
+  }
+  area.innerHTML = p.sequences.map((seq, i) => `
+    <div style="background:var(--card); border:1px solid var(--border); border-radius:8px; padding:12px; margin-bottom:10px; position:relative;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <div style="font-size:12px; font-weight:bold; color:var(--accent); font-family:var(--mono);">ブロック ${i+1} ${seq.cuts.length > 0 ? `<span style="color:var(--text-dim); font-size:10px; font-weight:normal;">(${seq.cuts.length}カット)</span>` : ''}</div>
+        <div style="display:flex; gap:4px;">
+          <button class="btn-sm" onclick="moveSeq('${seq.id}', -1)" ${i===0?'disabled style="opacity:0.3;"':''}>↑</button>
+          <button class="btn-sm" onclick="moveSeq('${seq.id}', 1)" ${i===p.sequences.length-1?'disabled style="opacity:0.3;"':''}>↓</button>
+          <button class="btn-sm danger" onclick="confirmDelete('ブロックを削除しますか？','「${escHtml(seq.title)||'名称未設定'}」と中のカットをすべて削除します。',()=>deleteSeq('${seq.id}'))">🗑</button>
+        </div>
+      </div>
+      <input class="field-input" type="text" placeholder="見出し（例：イントロ、起）" value="${escHtml(seq.title)}" onchange="updateOutlineBlock('${seq.id}', 'title', this.value)" style="margin-bottom:6px; background:var(--bg); border:1px solid var(--border-light); border-radius:4px; padding:8px 10px;">
+      <textarea class="field-textarea" rows="2" placeholder="シーンの内容・メモ..." onchange="updateOutlineBlock('${seq.id}', 'memo', this.value)" style="background:var(--bg); border:1px solid var(--border-light); border-radius:4px; padding:8px 10px;">${escHtml(seq.memo||'')}</textarea>
+    </div>
+  `).join('');
+}
+
+function addOutlineBlock() {
+  const p = currentProject(); if(!p) return;
+  p.sequences.push({ id:'s_'+Date.now(), title:'', memo:'', collapsed:false, cuts:[] });
+  saveProjects(); renderOutlineBlocks(); renderCuts(); updateMeta();
+}
+
+function updateOutlineBlock(id, key, val) {
+  const p = currentProject(); if(!p) return;
+  const seq = p.sequences.find(s=>s.id===id); if(!seq) return;
+  seq[key] = val;
+  saveProjects(); renderOutlineBlocks(); renderCuts();
+}
+
 function openAddSeq() {
   document.getElementById('dlgSeqTitle').value = '';
   openDlg('dlgNewSeq');
@@ -975,13 +1009,14 @@ function doAddSeq() {
   const title = document.getElementById('dlgSeqTitle').value.trim();
   if (!title) { document.getElementById('dlgSeqTitle').focus(); return; }
   const p = currentProject(); if (!p) return;
-  p.sequences.push({ id:'s_'+Date.now(), title, collapsed:false, cuts:[] });
-  saveProjects(); closeDlg('dlgNewSeq'); calcDurations(); renderCuts(); updateScriptStatsIfNeeded(); updateMeta(); showToast('シーケンスを追加しました');
+  p.sequences.push({ id:'s_'+Date.now(), title, memo:'', collapsed:false, cuts:[] });
+  saveProjects(); closeDlg('dlgNewSeq'); calcDurations(); renderOutlineBlocks(); renderCuts(); updateScriptStatsIfNeeded(); updateMeta(); showToast('シーケンスを追加しました');
 }
+
 function deleteSeq(seqId) {
   const p = currentProject(); if (!p) return;
   p.sequences = p.sequences.filter(s=>s.id!==seqId);
-  saveProjects(); calcDurations(); renderCuts(); updateScriptStatsIfNeeded(); updateMeta(); showToast('削除しました');
+  saveProjects(); calcDurations(); renderOutlineBlocks(); renderCuts(); updateScriptStatsIfNeeded(); updateMeta(); showToast('削除しました');
 }
 function toggleSeq(seqId) {
   const p = currentProject(); if (!p) return;
@@ -993,7 +1028,7 @@ function moveSeq(seqId, dir) {
   const idx = p.sequences.findIndex(s=>s.id===seqId); if(idx<0) return;
   const ni = idx+dir; if(ni<0 || ni>=p.sequences.length) return;
   [p.sequences[idx], p.sequences[ni]] = [p.sequences[ni], p.sequences[idx]];
-  saveProjects(); calcDurations(); renderCuts(); updateScriptStatsIfNeeded();
+  saveProjects(); calcDurations(); renderOutlineBlocks(); renderCuts(); updateScriptStatsIfNeeded();
 }
 
 function getCutArray(p, loc) {
@@ -1011,7 +1046,7 @@ function openAddCut(loc) {
   ['m_timecode','m_camera','m_a_narration','m_a_dialogue','m_a_lyrics','m_a_bgm','m_a_se','m_a_sl','m_action','m_note'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('m_durMin').value = '0';
   document.getElementById('m_durSec').value = '0';
-  updateFrameSelects(); 
+  updateFrameSelects(); // fpsと連動してフレーム選択肢を更新
   document.getElementById('m_durFrame').value = '0';
   document.querySelectorAll('#cutModal .cam-chip').forEach(c=>c.classList.remove('selected'));
   clearImage();
@@ -1023,7 +1058,7 @@ function openEditCut(loc, cutId) {
   const cut = arr.find(c=>c.id===cutId); if (!cut) return;
   editingCutLocation = loc; editingCutId = cutId;
   selectedCams = new Set(cut.cams||[]); selectedAngle = cut.angle||''; currentImageData = cut.image||null;
-  pendingScriptRemoveIndices = []; 
+  pendingScriptRemoveIndices = []; // 初期化
   
   document.getElementById('cutModalTitle').textContent = 'カットを編集';
   
@@ -1051,7 +1086,7 @@ function openEditCut(loc, cutId) {
 }
 function closeCutModal() { 
   document.getElementById('cutModal').classList.remove('open'); 
-  pendingScriptRemoveIndices = []; 
+  pendingScriptRemoveIndices = []; // キャンセル時は破棄
 }
 
 function updateScriptStatsIfNeeded() {
@@ -1100,6 +1135,7 @@ function saveCut() {
   if (editingCutId) { const idx=arr.findIndex(c=>c.id===editingCutId); if(idx>=0) arr[idx]=cut; }
   else arr.push(cut);
   
+  // 保存完了時にストックから確定で消去
   if (pendingScriptRemoveIndices.length > 0) {
     const uniqueIndices = [...new Set(pendingScriptRemoveIndices)].sort((a, b) => b - a);
     uniqueIndices.forEach(idx => removeLineFromStockByIndex(idx));
@@ -1137,7 +1173,7 @@ function openMoveDialog(loc, cutId) {
   const sel = document.getElementById('moveCutTarget');
   sel.innerHTML = `<option value="top" ${loc==='top'?'disabled':''}>📁 直下（シーケンスなし）</option>`;
   p.sequences.forEach(seq => {
-    sel.innerHTML += `<option value="${seq.id}" ${loc===seq.id?'disabled':''}>📁 ${escHtml(seq.title)}</option>`;
+    sel.innerHTML += `<option value="${seq.id}" ${loc===seq.id?'disabled':''}>📁 ${escHtml(seq.title)||'名称未設定'}</option>`;
   });
   openDlg('dlgMoveCut');
 }
@@ -1411,12 +1447,12 @@ function renderCuts() {
     return `<div class="seq-block">
       <div class="seq-header" onclick="toggleSeq('${seq.id}')">
         <div class="seq-toggle ${seq.collapsed?'':'open'}">▶</div>
-        <div class="seq-label">${escHtml(seq.title)}</div>
+        <div class="seq-label">${escHtml(seq.title)||'名称未設定'}</div>
         <div class="seq-meta">${seq.cuts.length} カット</div>
         <div class="seq-actions">
           <button class="btn-ssm" onclick="event.stopPropagation();moveSeq('${seq.id}',-1)" ${si===0?'style="opacity:0.3;pointer-events:none"':''}>↑</button>
           <button class="btn-ssm" onclick="event.stopPropagation();moveSeq('${seq.id}',1)" ${si===p.sequences.length-1?'style="opacity:0.3;pointer-events:none"':''}>↓</button>
-          <button class="btn-ssm danger" onclick="event.stopPropagation();confirmDelete('シーケンスを削除しますか？','「${seq.title.replace(/'/g,"\\'")}」と中のカットをすべて削除します。',()=>deleteSeq('${seq.id}'))">🗑</button>
+          <button class="btn-ssm danger" onclick="event.stopPropagation();confirmDelete('ブロックを削除しますか？','「${(seq.title||'名称未設定').replace(/'/g,"\\'")}」と中のカットをすべて削除します。',()=>deleteSeq('${seq.id}'))">🗑</button>
         </div>
       </div>
       <div class="seq-cuts ${seq.collapsed?'':'open'}">
@@ -1470,8 +1506,8 @@ function buildPreview() {
     : '';
   
   html += `<div class="preview-info-block">`;
-  [['タイトル',p.title],['タイプ',p.type],['クライアント',p.clientName],['楽曲',p.songTitle],['解像度',p.resolution],['フレームレート',fpsStr],['尺 (全体)',projDurStr],['コンセプト',p.concept],['キャスト',p.cast],['ロケ',p.location],['演出',p.direction],['納期',p.deadline]]
-    .filter(([,v])=>v).forEach(([k,v])=>{html+=`<div class="preview-info-row"><div class="preview-info-key">${k}</div><div>${escHtml(v)}</div></div>`;});
+  [['タイトル',p.title],['タイプ',p.type],['クライアント',p.clientName],['楽曲',p.songTitle],['解像度',p.resolution],['フレームレート',fpsStr],['尺 (全体)',projDurStr],['納期',p.deadline]]
+    .filter(([,v])=>v).forEach(([k,v])=>{html+=`<div class="preview-info-row"><div class="preview-info-key">${k}</div><div style="white-space:pre-wrap;">${escHtml(v)}</div></div>`;});
   html += `</div>`;
 
   if (countCuts(p)===0) {
@@ -1480,7 +1516,9 @@ function buildPreview() {
     html += `<table class="preview-table"><tr><th style="width:30%">ト書き / 画面指示</th><th style="width:40%; text-align:center;">画面</th><th style="width:30%">音声 / セリフ / 歌詞</th></tr>`;
     (p.cuts||[]).forEach((cut,ci)=>{ html += renderPreviewCutRow(cut, ci); });
     (p.sequences||[]).forEach(seq => {
-      html += `<tr><td colspan="3"><div class="preview-seq-title">▶ ${escHtml(seq.title)}</div></td></tr>`;
+      let seqHtml = `<div class="preview-seq-title">▶ ${escHtml(seq.title||'名称未設定')}</div>`;
+      if (seq.memo) seqHtml += `<div style="font-size:11px; color:#aaa; margin-bottom:8px; margin-left:12px; white-space:pre-wrap; line-height:1.4;">${escHtml(seq.memo)}</div>`;
+      html += `<tr><td colspan="3">${seqHtml}</td></tr>`;
       seq.cuts.forEach((cut,ci)=>{ html += renderPreviewCutRow(cut, ci); });
     });
     html += `</table>`;
@@ -1510,7 +1548,7 @@ function renderPreviewCutRow(cut, ci, isPdf = false) {
 
   const isVert = isVerticalProject();
   const aspect = isVert ? '9/16' : '16/9';
-  const maxWidth = isVert ? '100px' : '160px'; 
+  const maxWidth = isVert ? '100px' : '160px'; // 縦型は高さを確保するために幅を狭める
 
   let imgHtmlInner = '';
   if (isPdf) {
@@ -1580,11 +1618,26 @@ function removeLineFromStockByIndex(idx) {
   saveCurrentProject();
 }
 
+// 読み尺の計算ロジック（重み付け調整）
+function countReadChars(text) {
+  let count = 0;
+  const pureText = text.replace(/【.*?】/g, '').replace(/\s+/g, '');
+  for(let j=0; j<pureText.length; j++) {
+    const char = pureText[j];
+    if (char.match(/[一-龠々]/)) count += 1.25; // 漢字
+    else if (char.match(/[ぁぃぅぇぉゃゅょァィゥェォャュョ]/)) count += 0; // 拗音・小書き
+    else if (char.match(/[a-zA-Z0-9]/)) count += 0.75; // 英数字
+    else count += 1; // 通常のひらがな、カタカナ、促音（っ）など
+  }
+  return count;
+}
+
 function updateScriptStats() {
   const p = currentProject(); if(!p) return;
   const fps = getFps();
   const cuts = getAllCuts(p);
 
+  // ① 割り当て済み（本編）
   let timelineActualChars = 0;
   let timelineReadChars = 0;
   let timelineHtml = '';
@@ -1599,16 +1652,7 @@ function updateScriptStats() {
     if(combined) {
       const pureText = combined.replace(/【.*?】/g, '').replace(/\s+/g, '');
       timelineActualChars += pureText.length;
-      for(let j=0; j<pureText.length; j++) {
-        const char = pureText[j];
-        if (char.match(/[一-龠々]/)) {
-          timelineReadChars += 1.5;
-        } else if (char.match(/[a-zA-Zａ-ｚＡ-Ｚ0-9０-９]/)) {
-          timelineReadChars += 0.75;
-        } else {
-          timelineReadChars += 1;
-        }
-      }
+      timelineReadChars += countReadChars(combined);
       
       timelineHtml += `<div style="font-size:12px; margin-bottom:12px; border-bottom:1px solid var(--border); padding-bottom:12px; line-height:1.6;">
         <span style="color:var(--accent); font-weight:bold; font-family:var(--mono); margin-right:8px;">C${String(i+1).padStart(2,'0')}</span>
@@ -1619,6 +1663,7 @@ function updateScriptStats() {
   if(!timelineHtml) timelineHtml = `<div style="color:var(--text-dim); text-align:center; padding:20px 0;">まだカットに原稿がありません</div>`;
   document.getElementById('scriptTimelineArea').innerHTML = timelineHtml;
 
+  // ② ストック側
   if (document.getElementById('tab-script').classList.contains('active')) {
     p.script = document.getElementById('globalScriptInput').value;
     saveProjects(); 
@@ -1633,24 +1678,17 @@ function updateScriptStats() {
     if(line.trim() !== '') {
       const pureText = line.replace(/\s+/g, '');
       stockActualChars += pureText.length;
-      for(let j=0; j<pureText.length; j++) {
-        const char = pureText[j];
-        if (char.match(/[一-龠々]/)) {
-          stockReadChars += 1.5;
-        } else if (char.match(/[a-zA-Zａ-ｚＡ-Ｚ0-9０-９]/)) {
-          stockReadChars += 0.75;
-        } else {
-          stockReadChars += 1;
-        }
-      }
+      stockReadChars += countReadChars(line);
 
       cardsHtml += `
         <div class="script-card">
           <div class="script-card-text">${escHtml(line)}</div>
           <div class="script-card-actions">
-            <button class="script-btn" onclick="openAddCutFromScript(${idx}, 'dialogue')">💬 セリフで追加</button>
-            <button class="script-btn" onclick="openAddCutFromScript(${idx}, 'narration')">🎙 NAで追加</button>
-            <button class="script-btn" onclick="openAddCutFromScript(${idx}, 'lyrics')">🎶 歌詞で追加</button>
+            <button class="script-btn" onclick="openAddCutFromScript(${idx}, 'm_a_dialogue')">＋セリフ</button>
+            <button class="script-btn" onclick="openAddCutFromScript(${idx}, 'm_a_narration')">＋NA</button>
+            <button class="script-btn" onclick="openAddCutFromScript(${idx}, 'm_a_lyrics')">＋歌詞</button>
+            <button class="script-btn" onclick="openAddCutFromScript(${idx}, 'm_a_se')">＋SE</button>
+            <button class="script-btn" onclick="openAddCutFromScript(${idx}, 'm_a_sl')">＋SL</button>
           </div>
         </div>
       `;
@@ -1659,9 +1697,9 @@ function updateScriptStats() {
   if(stockActualChars === 0) cardsHtml = `<div style="text-align:center; color:var(--text-dim); padding:20px;">未割り当ての原稿はありません</div>`;
   document.getElementById('scriptCardsArea').innerHTML = cardsHtml;
 
-  // 全体計算
+  // ③ 全体計算
   const totalActualChars = timelineActualChars + stockActualChars;
-  const totalReadChars = Math.round(timelineReadChars + stockReadChars); // 表示用に四捨五入
+  const totalReadChars = Math.ceil(timelineReadChars + stockReadChars);
   const estSec = totalReadChars / 5;
   const estDurStr = framesToTimecode(estSec * fps, fps);
   const totalDurFrames = cuts.length > 0 ? cuts[cuts.length-1]._accumFrames : 0;
@@ -1689,18 +1727,10 @@ function updateScriptStats() {
   document.getElementById('scriptStatsArea').innerHTML = statsHtml;
 }
 
-function openAddCutFromScript(idx, targetType = 'dialogue') {
+function openAddCutFromScript(idx, targetId) {
   const text = currentScriptStockLines[idx];
   openAddCut('top');
-  
-  if (targetType === 'lyrics') {
-    document.getElementById('m_a_lyrics').value = text;
-  } else if (targetType === 'narration') {
-    document.getElementById('m_a_narration').value = text;
-  } else {
-    document.getElementById('m_a_dialogue').value = text;
-  }
-  
+  document.getElementById(targetId || 'm_a_dialogue').value = text;
   pendingScriptRemoveIndices = [idx]; 
 }
 
@@ -1736,7 +1766,7 @@ function doSelectScript(idx) {
     if(inputEl.value.trim() !== '') inputEl.value += '\n' + text;
     else inputEl.value = text;
   }
-  pendingScriptRemoveIndices.push(idx); 
+  pendingScriptRemoveIndices.push(idx); // 保存用に予約
   closeDlg('dlgSelectScript');
   showToast('入力欄に挿入しました（保存時にストックから消去されます）');
 }
@@ -1752,12 +1782,14 @@ function exportDoc() {
   const projDurStrE = projDurFramesE > 0
     ? `${framesToTimecode(projDurFramesE, parseFloat(p.fps)||30)}${p.durMode === 'must' ? '（マスト）' : '（目安）'}`
     : '';
-  const infoRows = [['タイトル',p.title],['タイプ',p.type],['クライアント',p.clientName],['楽曲',p.songTitle],['解像度',p.resolution],['フレームレート',fpsStr],['尺 (全体)',projDurStrE],['コンセプト',p.concept],['キャスト',p.cast],['ロケ',p.location],['演出',p.direction],['納期',p.deadline]].filter(([,v])=>v).map(([k,v])=>`<tr><td class="key-print">${k}</td><td>${esc(v)}</td></tr>`).join('');
+  const infoRows = [['タイトル',p.title],['タイプ',p.type],['クライアント',p.clientName],['楽曲',p.songTitle],['解像度',p.resolution],['フレームレート',fpsStr],['尺 (全体)',projDurStrE],['納期',p.deadline]].filter(([,v])=>v).map(([k,v])=>`<tr><td class="key-print">${k}</td><td style="white-space:pre-wrap;">${esc(v)}</td></tr>`).join('');
 
   let tableHtml = `<table class="pdf-table"><tr><th style="width:30%">ト書き / 画面指示</th><th style="width:40%">画面</th><th style="width:30%">音声 / セリフ</th></tr>`;
   (p.cuts||[]).forEach((cut,ci)=>{ tableHtml += renderPreviewCutRow(cut, ci, true); });
   (p.sequences||[]).forEach(seq=>{
-    tableHtml += `<tr><td colspan="3" style="padding:0;"><div class="seq-label-print">▶ ${esc(seq.title)}</div></td></tr>`;
+    let seqHtml = `<div class="seq-label-print">▶ ${esc(seq.title||'名称未設定')}</div>`;
+    if (seq.memo) seqHtml += `<div style="font-size:10px; color:#666; margin-top:4px; margin-left:8px; white-space:pre-wrap;">${esc(seq.memo)}</div>`;
+    tableHtml += `<tr><td colspan="3" style="padding:4px 10px;">${seqHtml}</td></tr>`;
     seq.cuts.forEach((cut,ci)=>{ tableHtml += renderPreviewCutRow(cut, ci, true); });
   });
   tableHtml += `</table>`;
@@ -1773,7 +1805,7 @@ function exportDoc() {
 .export-content .pdf-table { width:100%; border-collapse:collapse; table-layout:fixed; }
 .export-content .pdf-table th, .export-content .pdf-table td { border-left:1px solid #333; border-right:1px solid #333; border-top:none; border-bottom:none; padding:10px; vertical-align:top; word-wrap:break-word; color:#333; }
 .export-content .pdf-table th { background:#f0f0f0; font-size:11px; text-align:center; border-bottom:1px solid #333; color:#111; }
-.export-content .seq-label-print { font-weight:700; font-size:12px; color:#111; background:#e0e0e0; padding:4px 10px; display:inline-block; margin-top:10px; }
+.export-content .seq-label-print { font-weight:700; font-size:12px; color:#111; background:#e0e0e0; padding:4px 10px; display:inline-block; }
 </style>
 <h1>${esc(p.title||'企画書')}</h1>
 <div class="meta">作成日：${now} カット ${countCuts(p)}</div>
@@ -1810,7 +1842,7 @@ function showToast(msg) { const t=document.getElementById('toast');t.textContent
 document.getElementById('cutModal').addEventListener('click',e=>{if(e.target===document.getElementById('cutModal')) closeCutModal();});
 
 // ===== VCON ENGINE =====
-let vconCuts = [];       
+let vconCuts = [];       // 再生用カット配列
 let vconFps = 30;
 let vconTotalFrames = 0;
 let vconCurrentFrame = 0;
@@ -1819,7 +1851,7 @@ let vconRafId = null;
 let vconLastTime = null;
 let vconCanvas = null;
 let vconCtx = null;
-let vconImgCache = {};   
+let vconImgCache = {};   // cutId → Image object
 let vconRecorder = null;
 let vconRecordChunks = [];
 let vconRecording = false;
@@ -1835,7 +1867,7 @@ function buildVconCuts() {
       index: i,
       cut,
       startFrame: accum,
-      frames: Math.max(frames, 1), 
+      frames: Math.max(frames, 1), // 0フレームカットは1フレとして扱う
     };
     accum += entry.frames;
     return entry;
@@ -1850,19 +1882,23 @@ function initVcon() {
   vconTotalFrames = vconCuts.reduce((s, e) => s + e.frames, 0);
   vconCurrentFrame = 0;
 
+  // canvas setup
   vconCanvas = document.getElementById('vconCanvas');
   vconCtx = vconCanvas.getContext('2d');
 
+  // aspect ratio from project
   const isVert = isVerticalProject();
   const cw = isVert ? 540 : 960;
   const ch = isVert ? 960 : 540;
   vconCanvas.width = cw;
   vconCanvas.height = ch;
 
+  // seek bar
   const seek = document.getElementById('vconSeek');
   seek.max = vconTotalFrames - 1;
   seek.value = 0;
 
+  // preload images
   vconImgCache = {};
   vconCuts.forEach(entry => {
     if (entry.cut.image) {
@@ -1900,7 +1936,7 @@ function toggleVconPlay() {
     vconPlaying = true;
     vconLastTime = null;
     document.getElementById('vconPlayBtn').textContent = '⏸';
-    vconRafId = requestAnimationFrame(vconLoop); 
+    vconRafId = requestAnimationFrame(vconLoop); // ← 最初からrAFで呼ぶ
   }
 }
 
@@ -1936,9 +1972,11 @@ function onVconSeek(val) {
 }
 
 function vconSkip(dir) {
+  // 前後のカットの先頭に移動
   const cur = getCurrentVconEntry();
   if (!cur) return;
   if (dir < 0) {
+    // 前のカット or 現カット先頭
     if (vconCurrentFrame > cur.startFrame) {
       vconCurrentFrame = cur.startFrame;
     } else {
@@ -1964,26 +2002,32 @@ function renderVconFrame() {
   const cut = entry.cut;
   const cw = vconCanvas.width, ch = vconCanvas.height;
 
+  // background
   vconCtx.fillStyle = '#ffffff';
   vconCtx.fillRect(0, 0, cw, ch);
 
   const img = vconImgCache[cut.id];
   if (img && img.complete && img.naturalWidth > 0) {
+    // contain fit
     const scale = Math.min(cw / img.naturalWidth, ch / img.naturalHeight);
     const dw = img.naturalWidth * scale, dh = img.naturalHeight * scale;
     const dx = (cw - dw) / 2, dy = (ch - dh) / 2;
     vconCtx.drawImage(img, dx, dy, dw, dh);
   } else {
+    // placeholder
     vconCtx.fillStyle = '#f5f5f5';
     vconCtx.fillRect(0, 0, cw, ch);
+    // grid lines
     vconCtx.strokeStyle = '#ddd';
     vconCtx.lineWidth = 1;
     for (let x = 0; x < cw; x += 60) { vconCtx.beginPath(); vconCtx.moveTo(x,0); vconCtx.lineTo(x,ch); vconCtx.stroke(); }
     for (let y = 0; y < ch; y += 60) { vconCtx.beginPath(); vconCtx.moveTo(0,y); vconCtx.lineTo(cw,y); vconCtx.stroke(); }
+    // cut number
     vconCtx.fillStyle = '#bbb';
     vconCtx.font = `bold ${Math.floor(ch * 0.18)}px monospace`;
     vconCtx.textAlign = 'center';
     vconCtx.textBaseline = 'middle';
+    // find global cut index
     const globalIdx = entry.index;
     vconCtx.fillText(`C${String(globalIdx + 1).padStart(2,'0')}`, cw/2, ch/2);
     vconCtx.font = `${Math.floor(ch * 0.055)}px sans-serif`;
@@ -1991,6 +2035,7 @@ function renderVconFrame() {
     vconCtx.fillText(cut.action ? cut.action.slice(0,30) : '', cw/2, ch/2 + ch*0.15);
   }
 
+  // frame counter overlay (top-left)
   const frameInCut = vconCurrentFrame - entry.startFrame;
   vconCtx.fillStyle = 'rgba(0,0,0,0.45)';
   vconCtx.fillRect(0, 0, cw, 28);
@@ -2003,6 +2048,7 @@ function renderVconFrame() {
   vconCtx.fillStyle = '#aaa';
   vconCtx.fillText(framesToTimecode(vconCurrentFrame, vconFps), cw - 10, 14);
 
+  // update subtitles
   updateVconSubs(cut);
 }
 
@@ -2034,10 +2080,12 @@ function updateVconUI() {
   const seek = document.getElementById('vconSeek');
   seek.value = vconCurrentFrame;
 
+  // time display
   const curTC = framesToTimecode(vconCurrentFrame, vconFps);
   const totTC = framesToTimecode(vconTotalFrames, vconFps);
   document.getElementById('vconTimeDisplay').textContent = `${curTC} / ${totTC}`;
 
+  // cut info
   if (entry) {
     const cut = entry.cut;
     const camStr = [...(cut.cams||[]), cut.angle].filter(Boolean).join(' / ');
@@ -2050,6 +2098,7 @@ function updateVconUI() {
 // ===== VCON RECORD =====
 function startVconRecord() {
   if (!vconCanvas) { initVcon(); }
+  // wait for initVcon to set up canvas
   setTimeout(() => {
     const quality = document.getElementById('vconQuality').value;
     const bitrate = quality === 'high' ? 8000000 : quality === 'mid' ? 3000000 : 1000000;
@@ -2066,6 +2115,7 @@ function startVconRecord() {
       vconRecording = true;
       vconCurrentFrame = 0;
       document.getElementById('vconRecordingBar').style.display = 'block';
+      // auto-play
       if (!vconPlaying) toggleVconPlay();
     } catch(e) {
       showToast('この環境では録画できません');
