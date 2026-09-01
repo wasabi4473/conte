@@ -38,6 +38,10 @@
   .project-card-type { font-size: 11px; color: var(--accent); background: var(--accent-dim); padding: 2px 8px; border-radius: 4px; font-family: var(--mono); flex-shrink: 0; }
   .project-card-del { background: transparent; border: none; color: var(--text-dim); font-size: 16px; cursor: pointer; padding: 4px; flex-shrink: 0; transition: color 0.12s; }
   .project-card-del:hover { color: var(--red); }
+  .cloud-bar { margin-bottom:14px; padding:12px; border:1px solid var(--border); border-radius:10px; background:var(--surface); }
+  .cloud-row { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .cloud-input { flex:1; min-width:180px; background:var(--bg); color:var(--text); border:1px solid var(--border-light); border-radius:7px; padding:8px 10px; font-family:var(--jp); }
+  .cloud-status { margin-top:7px; font-size:11px; color:var(--text-dim); }
 
   .editor-header { position: sticky; top: 0; z-index: 100; background: rgba(20,20,20,0.96); backdrop-filter: blur(8px); border-bottom: 1px solid var(--border); padding: 10px 16px; display: flex; align-items: center; gap: 10px; }
   .btn-back { background: transparent; border: none; color: var(--text-mid); font-size: 20px; cursor: pointer; padding: 2px 4px; flex-shrink: 0; }
@@ -257,6 +261,21 @@
     </div>
   </div>
   <div class="list-body">
+    <div class="cloud-bar">
+      <div class="cloud-row" id="cloudSignedOut">
+        <input class="cloud-input" id="cloudEmail" type="email" autocomplete="username" placeholder="メールアドレス">
+        <input class="cloud-input" id="cloudPassword" type="password" autocomplete="current-password" placeholder="パスワード（8文字以上）">
+        <button class="btn-primary" onclick="loginCloudWithPassword()">ログイン</button>
+      </div>
+      <div class="cloud-row" id="cloudSignedIn" style="display:none;">
+        <span id="cloudAccount" style="flex:1; font-size:12px;"></span>
+        <input class="cloud-input" id="cloudNewPassword" type="password" autocomplete="new-password" placeholder="同期用パスワードを設定">
+        <button class="btn-secondary" onclick="setCloudPassword()">パスワード設定</button>
+        <button class="btn-secondary" onclick="syncCloudNow()">今すぐ同期</button>
+        <button class="btn-secondary" onclick="logoutCloud()">ログアウト</button>
+      </div>
+      <div class="cloud-status" id="cloudStatus">この端末だけに保存中</div>
+    </div>
     <div class="list-empty" id="listEmpty"><div class="list-empty-icon">🎬</div>企画がまだありません<br>「新規企画」からはじめましょう</div>
     <div id="projectList"></div>
   </div>
@@ -694,6 +713,11 @@
 
 <div id="version-check" style="position:fixed; bottom:5px; right:5px; font-size:8px; color:#444; font-family:monospace; pointer-events:none; z-index:99999;">v11</div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="./supabase-config.js"></script>
+<script src="./conte-data.js"></script>
+<script src="./conte-storage.js"></script>
+<script src="./conte-cloud.js"></script>
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
@@ -716,8 +740,10 @@ window.addEventListener('DOMContentLoaded', () => {
   document.getElementById('durModeGuide').checked = true;
 });
 
-const STORAGE_KEY = 'conte_v4';
+const STORAGE_KEY = ConteStorage.STORAGE_KEY;
+const storageAdapter = ConteStorage.createLocalStorageAdapter(localStorage);
 let projects = [];
+let lastSaveError = null;
 let currentProjectId = null;
 let editingCutLocation = null; 
 let editingCutId = null;
@@ -778,17 +804,70 @@ function calcDurations() {
   });
 }
 
-function saveProjects() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(projects)); } catch(e) {} }
-function loadProjects() {
+function saveProjects() {
+  const result = storageAdapter.save(projects);
+  lastSaveError = result.ok ? null : result.error;
+  updateMeta();
+  if (result.ok && window.ConteCloud) ConteCloud.queueSync(projects, applyCloudProjects);
+  return result.ok;
+}
+
+function applyCloudProjects(merged) {
+  if (!Array.isArray(merged)) return;
+  projects = ConteData.migrateProjects(merged);
+  storageAdapter.save(projects);
+  renderProjectList();
+}
+
+function updateCloudUi(cloudState) {
+  const signedIn=document.getElementById('cloudSignedIn');
+  const signedOut=document.getElementById('cloudSignedOut');
+  if (!signedIn || !signedOut) return;
+  signedIn.style.display=cloudState.signedIn?'flex':'none';
+  signedOut.style.display=cloudState.signedIn?'none':'flex';
+  document.getElementById('cloudAccount').textContent=cloudState.email||'ログイン済み';
+  const status=document.getElementById('cloudStatus');
+  if (cloudState.error) status.textContent=`⚠ ${cloudState.error}`;
+  else if (cloudState.syncing) status.textContent='クラウドと同期中…';
+  else if (cloudState.signedIn) status.textContent='クラウド同期が有効です';
+  else status.textContent='この端末だけに保存中';
+}
+
+async function loginCloudWithPassword() {
+  const email=document.getElementById('cloudEmail').value.trim();
+  const password=document.getElementById('cloudPassword').value;
+  if (!email || !password) return showToast('メールアドレスとパスワードを入力してください');
   try {
-    const r = localStorage.getItem(STORAGE_KEY);
-    if (r) projects = JSON.parse(r);
-  } catch(e) { projects = []; }
-  projects.forEach(p => { 
-    if (!p.cuts) p.cuts = []; 
-    if (!p.sequences) p.sequences = []; 
-    if (!p.script) p.script = ''; 
-  });
+    await ConteCloud.signInWithPassword(email,password);
+    document.getElementById('cloudPassword').value='';
+    await syncCloudNow();
+    showToast('ログインして同期しました');
+  }
+  catch(error) { updateCloudUi({signedIn:false,error:error.message}); }
+}
+
+async function setCloudPassword() {
+  const input=document.getElementById('cloudNewPassword');
+  const password=input.value;
+  if (password.length<8) return showToast('パスワードは8文字以上にしてください');
+  try { await ConteCloud.setPassword(password); input.value=''; showToast('同期用パスワードを設定しました'); }
+  catch(error) { updateCloudUi({signedIn:true,error:error.message}); }
+}
+
+async function logoutCloud() {
+  try { await ConteCloud.signOut(); showToast('ログアウトしました'); }
+  catch(error) { updateCloudUi({signedIn:true,error:error.message}); }
+}
+
+async function syncCloudNow() {
+  const result=await ConteCloud.sync(projects);
+  if (result.ok) { applyCloudProjects(result.projects); showToast('同期しました'); }
+}
+function loadProjects() {
+  const result = storageAdapter.load();
+  lastSaveError = result.ok ? null : result.error;
+  try { projects = ConteData.migrateProjects(result.projects); }
+  catch (error) { projects = []; lastSaveError = error; }
 }
 function currentProject() { return projects.find(p => p.id === currentProjectId) || null; }
 
@@ -921,7 +1000,7 @@ function renderProjectList() {
 function openDataManagement() { openDlg('dlgData'); }
 
 function backupData() {
-  const data = localStorage.getItem(STORAGE_KEY) || '[]';
+  const data = storageAdapter.rawBackup();
   const blob = new Blob([data], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -941,10 +1020,11 @@ function restoreData(e) {
   reader.onload = function(ev) {
     try {
       const data = JSON.parse(ev.target.result);
-      if (Array.isArray(data)) {
+      const validation = ConteData.validateProjects(data);
+      if (validation.ok) {
         if (confirm('現在のすべてのデータが上書きされます。本当によろしいですか？')) {
-          projects = data;
-          saveProjects();
+          projects = ConteData.migrateProjects(data);
+          if (!saveProjects()) throw lastSaveError;
           renderProjectList();
           closeDlg('dlgData');
           showToast('データを復元しました');
@@ -968,7 +1048,7 @@ function createProject() {
 function doCreateProject() {
   const title = document.getElementById('dlgProjectTitle').value.trim();
   if (!title) { document.getElementById('dlgProjectTitle').focus(); return; }
-  const id = 'p_'+Date.now();
+  const id = ConteData.makeId('p');
   projects.push({ id, title, type:'', clientName:'', resolution:'', fps:'', duration:'', deadline:'', script:'', outlineEnabled:false, scriptEnabled:false, cuts:[], sequences:[], updatedAt:Date.now() });
   saveProjects(); closeDlg('dlgNewProject'); openProject(id);
 }
@@ -1049,7 +1129,7 @@ function renderOutlineBlocks() {
 
 function addOutlineBlock() {
   const p = currentProject(); if(!p) return;
-  p.sequences.push({ id:'s_'+Date.now(), title:'', memo:'', collapsed:false, cuts:[] });
+  p.sequences.push({ id:ConteData.makeId('s'), title:'', memo:'', collapsed:false, cuts:[] });
   saveProjects(); renderOutlineBlocks(); renderCuts(); updateMeta();
 }
 
@@ -1069,7 +1149,7 @@ function doAddSeq() {
   const title = document.getElementById('dlgSeqTitle').value.trim();
   if (!title) { document.getElementById('dlgSeqTitle').focus(); return; }
   const p = currentProject(); if (!p) return;
-  p.sequences.push({ id:'s_'+Date.now(), title, memo:'', collapsed:false, cuts:[] });
+  p.sequences.push({ id:ConteData.makeId('s'), title, memo:'', collapsed:false, cuts:[] });
   saveProjects(); closeDlg('dlgNewSeq'); calcDurations(); renderOutlineBlocks(); renderCuts(); updateScriptStatsIfNeeded(); updateMeta(); showToast('箱書きブロックを追加しました');
 }
 
@@ -1175,7 +1255,7 @@ function saveCut() {
   };
 
   const cut = { 
-    id: editingCutId||'c_'+Date.now(), 
+    id: editingCutId||ConteData.makeId('c'),
     durM: document.getElementById('m_durMin').value,
     durS: document.getElementById('m_durSec').value,
     durF: document.getElementById('m_durFrame').value,
@@ -1888,7 +1968,10 @@ function confirmDelete(title, msg, cb) {
 
 function updateMeta() {
   const p = currentProject(); if (!p) return;
-  document.getElementById('projectMeta').textContent = `カット ${countCuts(p)} · 自動保存済み`;
+  const saveLabel = lastSaveError ? '⚠ 保存できていません' : '自動保存済み';
+  const meta = document.getElementById('projectMeta');
+  meta.textContent = `カット ${countCuts(p)} · ${saveLabel}`;
+  meta.style.color = lastSaveError ? 'var(--red)' : '';
 }
 function escHtml(str) { return (str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function showToast(msg) { const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500); }
@@ -2183,6 +2266,12 @@ function downloadVconVideo() {
 }
 
 loadProjects(); renderProjectList();
+ConteCloud.onStateChange(updateCloudUi);
+ConteCloud.init().then(async cloudState=>{
+  updateCloudUi(cloudState);
+  if (cloudState.signedIn) await syncCloudNow();
+});
 </script>
 </body>
 </html>
+

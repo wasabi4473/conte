@@ -1,10 +1,14 @@
 // コンテ帳 - Service Worker
 // 方針：ネットがあれば常に最新を取得し、取得できたものをキャッシュに保存。
 //       オフラインで取得に失敗した時だけ、キャッシュから返す（フォールバック）。
-const CACHE_NAME = 'conte-cache-v3';
+const CACHE_NAME = 'conte-cache-v5';
 const FILES_TO_CACHE = [
   './',
   './index.html',
+  './supabase-config.js',
+  './conte-data.js',
+  './conte-storage.js',
+  './conte-cloud.js',
   './manifest.json',
   './icon.png'
 ];
@@ -48,3 +52,4 @@ self.addEventListener('fetch', (event) => {
       .catch(() => caches.match(event.request))
   );
 });
+
