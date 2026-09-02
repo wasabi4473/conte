@@ -1,7 +1,7 @@
 // コンテ帳 - Service Worker
 // 方針：ネットがあれば常に最新を取得し、取得できたものをキャッシュに保存。
 //       オフラインで取得に失敗した時だけ、キャッシュから返す（フォールバック）。
-const CACHE_NAME = 'conte-cache-v7';
+const CACHE_NAME = 'conte-cache-v8';
 const FILES_TO_CACHE = [
   './',
   './index.html',
