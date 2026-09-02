@@ -22,6 +22,8 @@
     if (!Array.isArray(value.cuts)) value.cuts = [];
     if (!Array.isArray(value.sequences)) value.sequences = [];
     if (typeof value.script !== 'string') value.script = '';
+    if (!['cut','continuous'].includes(value.conteMode)) value.conteMode = 'cut';
+    if (!['horizontal','vertical','free'].includes(value.flowDirection)) value.flowDirection = 'horizontal';
     value.cuts = value.cuts.map(normalizeCut);
     value.sequences = value.sequences.map(sequence => {
       const seq = sequence && typeof sequence === 'object' ? sequence : {};
