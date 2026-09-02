@@ -32,6 +32,28 @@
       seq.cuts = seq.cuts.map(normalizeCut);
       return seq;
     });
+    if (!Array.isArray(value.continuousBlocks)) value.continuousBlocks = [];
+    value.continuousBlocks = value.continuousBlocks.map(block => {
+      const item = block && typeof block === 'object' ? block : {};
+      if (!item.id) item.id = makeId('b');
+      if (typeof item.title !== 'string') item.title = '';
+      if (!['horizontal','vertical'].includes(item.direction)) item.direction = 'horizontal';
+      if (!Array.isArray(item.points)) item.points = [];
+      item.points = item.points.map(normalizeCut);
+      return item;
+    });
+    if (!Array.isArray(value.timelineItems)) {
+      if (value.conteMode === 'continuous' && value.cuts.length) {
+        const block = { id:makeId('b'), title:value.title||'長回し', direction:value.flowDirection==='vertical'?'vertical':'horizontal', points:value.cuts };
+        value.continuousBlocks.push(block);
+        value.cuts = [];
+        value.timelineItems = [{ kind:'continuous', id:block.id }];
+      } else {
+        value.timelineItems = value.cuts.map(cut => ({ kind:'cut', id:cut.id }));
+      }
+    }
+    value.timelineItems = value.timelineItems.filter(item => item && (item.kind==='cut' || item.kind==='continuous') && item.id);
+    value.conteMode = 'cut';
     return value;
   }
   function migrateProjects(input) {
