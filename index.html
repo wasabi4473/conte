@@ -1822,16 +1822,37 @@ function buildPreview() {
     html += `<div style="color:var(--text-dim);font-size:13px;text-align:center;padding:20px 0;">カットがまだありません</div>`;
   } else {
     html += `<table class="preview-table"><tr><th style="width:30%">ト書き / 画面指示</th><th style="width:40%; text-align:center;">画面</th><th style="width:30%">音声 / セリフ / 歌詞</th></tr>`;
-    (p.cuts||[]).forEach((cut,ci)=>{ html += renderPreviewCutRow(cut, ci); });
+    let cutIndex=0;
+    (p.timelineItems||[]).forEach(item=>{
+      if(item.kind==='cut') { const cut=p.cuts.find(c=>c.id===item.id); if(cut) html+=renderPreviewCutRow(cut,cutIndex++); }
+      if(item.kind==='continuous') { const block=p.continuousBlocks.find(b=>b.id===item.id); if(block) html+=renderPreviewFlowRow(block,false); }
+    });
     (p.sequences||[]).forEach(seq => {
       let seqHtml = `<div class="preview-seq-title">▶ ${escHtml(seq.title||'名称未設定')}</div>`;
       if (seq.memo) seqHtml += `<div style="font-size:11px; color:#aaa; margin-bottom:8px; margin-left:12px; white-space:pre-wrap; line-height:1.4;">${escHtml(seq.memo)}</div>`;
       html += `<tr><td colspan="3">${seqHtml}</td></tr>`;
-      seq.cuts.forEach((cut,ci)=>{ html += renderPreviewCutRow(cut, ci); });
+      seq.cuts.forEach(cut=>{ html += renderPreviewCutRow(cut, cutIndex++); });
     });
     html += `</table>`;
   }
   document.getElementById('previewDoc').innerHTML = html;
+}
+
+function renderPreviewFlowRow(block,isPdf=false) {
+  const vertical=block.direction==='vertical';
+  const panels=(block.points||[]).map((point,index)=>{
+    const time=point.timecode||framesToTimecode(point._accumFrames||0,getFps());
+    const caption=point.action||point.cameraNote||'';
+    return `<div style="position:relative;${vertical?'min-height:150px;':'flex:1;min-width:0;'}background:#fff;overflow:hidden;">
+      ${point.image?`<img src="${point.image}" style="display:block;width:100%;height:${vertical?'auto':'150px'};object-fit:cover;" alt="">`:`<div style="height:150px;display:flex;align-items:center;justify-content:center;color:#aaa;font-size:10px;">No Image</div>`}
+      <div style="position:absolute;top:5px;left:5px;background:rgba(0,0,0,.72);color:#e8c840;padding:2px 5px;border-radius:3px;font:700 9px monospace;">${escHtml(time)}</div>
+      ${caption?`<div style="position:absolute;left:0;right:0;bottom:0;padding:14px 6px 5px;background:linear-gradient(transparent,rgba(0,0,0,.78));color:#fff;font-size:9px;">${escHtml(caption)}</div>`:''}
+    </div>`;
+  }).join('');
+  return `<tr><td colspan="3" style="padding:${isPdf?'8px':'10px'};">
+    <div style="font-weight:700;color:${isPdf?'#333':'var(--accent)'};margin-bottom:6px;">${vertical?'↓':'→'} ${escHtml(block.title||'長回し')}</div>
+    <div style="display:flex;flex-direction:${vertical?'column':'row'};width:100%;overflow:hidden;background:#eee;">${panels||'<div style="padding:20px;color:#999;font-size:11px;">地点なし</div>'}</div>
+  </td></tr>`;
 }
 
 function renderPreviewCutRow(cut, ci, isPdf = false) {
@@ -2092,12 +2113,16 @@ function exportDoc() {
   const infoRows = [['タイトル',p.title],['タイプ',p.type],['クライアント / アーティスト名',p.clientName],['解像度',p.resolution],['フレームレート',fpsStr],['尺 (全体)',projDurStrE],['納期',p.deadline]].filter(([,v])=>v).map(([k,v])=>`<tr><td class="key-print">${k}</td><td style="white-space:pre-wrap;">${esc(v)}</td></tr>`).join('');
 
   let tableHtml = `<table class="pdf-table"><tr><th style="width:30%">ト書き / 画面指示</th><th style="width:40%">画面</th><th style="width:30%">音声 / セリフ</th></tr>`;
-  (p.cuts||[]).forEach((cut,ci)=>{ tableHtml += renderPreviewCutRow(cut, ci, true); });
+  let cutIndex=0;
+  (p.timelineItems||[]).forEach(item=>{
+    if(item.kind==='cut') { const cut=p.cuts.find(c=>c.id===item.id); if(cut) tableHtml+=renderPreviewCutRow(cut,cutIndex++,true); }
+    if(item.kind==='continuous') { const block=p.continuousBlocks.find(b=>b.id===item.id); if(block) tableHtml+=renderPreviewFlowRow(block,true); }
+  });
   (p.sequences||[]).forEach(seq=>{
     let seqHtml = `<div class="seq-label-print">▶ ${esc(seq.title||'名称未設定')}</div>`;
     if (seq.memo) seqHtml += `<div style="font-size:10px; color:#666; margin-top:4px; margin-left:8px; white-space:pre-wrap;">${esc(seq.memo)}</div>`;
     tableHtml += `<tr><td colspan="3" style="padding:4px 10px;">${seqHtml}</td></tr>`;
-    seq.cuts.forEach((cut,ci)=>{ tableHtml += renderPreviewCutRow(cut, ci, true); });
+    seq.cuts.forEach(cut=>{ tableHtml += renderPreviewCutRow(cut, cutIndex++, true); });
   });
   tableHtml += `</table>`;
 
