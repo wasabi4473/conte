@@ -10,6 +10,12 @@ const migrated=data.migrateProjects(structuredClone(legacy));
 assert.equal(migrated[0].title,'既存企画');
 assert.deepEqual(migrated[0].sequences,[]);
 assert.equal(migrated[0].cuts[0].audio.dialogue,'台詞');
+assert.equal(migrated[0].conteMode,'cut');
+assert.equal(migrated[0].flowDirection,'horizontal');
+
+const continuous=ConteData.migrateProjects([{id:'p_2',title:'長回し',conteMode:'continuous',flowDirection:'vertical',cuts:[]}]);
+assert.equal(continuous[0].conteMode,'continuous');
+assert.equal(continuous[0].flowDirection,'vertical');
 const memory=fakeStorage();
 const adapter=storageModule.createLocalStorageAdapter(memory);
 assert.equal(adapter.save(migrated).ok,true);
