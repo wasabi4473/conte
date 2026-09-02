@@ -286,7 +286,7 @@
         <input class="cloud-input" id="cloudEmail" type="email" autocomplete="username" placeholder="メールアドレス">
         <div class="password-field">
           <input class="cloud-input" id="cloudPassword" type="password" autocomplete="current-password" placeholder="パスワード（8文字以上）">
-          <button class="password-toggle" type="button" aria-label="パスワードを表示" aria-pressed="false" onclick="togglePasswordVisibility('cloudPassword', this)">◉</button>
+          <button class="password-toggle" type="button" aria-label="パスワードを表示" aria-pressed="false" onclick="togglePasswordVisibility('cloudPassword', this)">👁</button>
         </div>
         <button class="btn-primary" onclick="loginCloudWithPassword()">ログイン</button>
       </div>
@@ -294,7 +294,7 @@
         <span id="cloudAccount" style="flex:1; font-size:12px;"></span>
         <div class="password-field">
           <input class="cloud-input" id="cloudNewPassword" type="password" autocomplete="new-password" placeholder="同期用パスワードを設定">
-          <button class="password-toggle" type="button" aria-label="パスワードを表示" aria-pressed="false" onclick="togglePasswordVisibility('cloudNewPassword', this)">◉</button>
+          <button class="password-toggle" type="button" aria-label="パスワードを表示" aria-pressed="false" onclick="togglePasswordVisibility('cloudNewPassword', this)">👁</button>
         </div>
         <button class="btn-secondary" onclick="setCloudPassword()">パスワード設定</button>
         <button class="btn-secondary" onclick="syncCloudNow()">今すぐ同期</button>
@@ -864,7 +864,7 @@ function togglePasswordVisibility(inputId, button) {
   if (!input) return;
   const visible=input.type==='text';
   input.type=visible?'password':'text';
-  button.textContent=visible?'◉':'◎';
+  button.textContent=visible?'👁':'⊘';
   button.setAttribute('aria-pressed',String(!visible));
   button.setAttribute('aria-label',visible?'パスワードを表示':'パスワードを隠す');
   input.focus();
