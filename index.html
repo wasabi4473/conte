@@ -41,6 +41,10 @@
   .cloud-bar { margin-bottom:14px; padding:12px; border:1px solid var(--border); border-radius:10px; background:var(--surface); }
   .cloud-row { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
   .cloud-input { flex:1; min-width:180px; background:var(--bg); color:var(--text); border:1px solid var(--border-light); border-radius:7px; padding:8px 10px; font-family:var(--jp); }
+  .password-field { position:relative; flex:1; min-width:180px; }
+  .password-field .cloud-input { width:100%; min-width:0; padding-right:42px; }
+  .password-toggle { position:absolute; right:5px; top:50%; transform:translateY(-50%); width:34px; height:34px; padding:0; border:0; border-radius:6px; background:transparent; color:var(--text-mid); font-size:17px; cursor:pointer; }
+  .password-toggle:hover { color:var(--text); background:var(--card-hover); }
   .cloud-status { margin-top:7px; font-size:11px; color:var(--text-dim); }
   .cloud-row button { white-space: nowrap; }
 
@@ -49,11 +53,13 @@
     #cloudSignedOut,
     #cloudSignedIn { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: center; }
     #cloudSignedOut .cloud-input,
-    #cloudSignedOut button,
+    #cloudSignedOut .password-field,
+    #cloudSignedOut > button,
     #cloudSignedIn #cloudAccount,
     #cloudSignedIn #cloudNewPassword,
-    #cloudSignedIn button:first-of-type { grid-column: 1 / -1; width: 100%; min-width: 0; }
-    #cloudSignedIn button { width: 100%; min-width: 0; }
+    #cloudSignedIn .password-field,
+    #cloudSignedIn > button:first-of-type { grid-column: 1 / -1; width: 100%; min-width: 0; }
+    #cloudSignedIn > button { width: 100%; min-width: 0; }
     #cloudAccount { overflow-wrap: anywhere; }
   }
 
@@ -278,12 +284,18 @@
     <div class="cloud-bar">
       <div class="cloud-row" id="cloudSignedOut">
         <input class="cloud-input" id="cloudEmail" type="email" autocomplete="username" placeholder="メールアドレス">
-        <input class="cloud-input" id="cloudPassword" type="password" autocomplete="current-password" placeholder="パスワード（8文字以上）">
+        <div class="password-field">
+          <input class="cloud-input" id="cloudPassword" type="password" autocomplete="current-password" placeholder="パスワード（8文字以上）">
+          <button class="password-toggle" type="button" aria-label="パスワードを表示" aria-pressed="false" onclick="togglePasswordVisibility('cloudPassword', this)">◉</button>
+        </div>
         <button class="btn-primary" onclick="loginCloudWithPassword()">ログイン</button>
       </div>
       <div class="cloud-row" id="cloudSignedIn" style="display:none;">
         <span id="cloudAccount" style="flex:1; font-size:12px;"></span>
-        <input class="cloud-input" id="cloudNewPassword" type="password" autocomplete="new-password" placeholder="同期用パスワードを設定">
+        <div class="password-field">
+          <input class="cloud-input" id="cloudNewPassword" type="password" autocomplete="new-password" placeholder="同期用パスワードを設定">
+          <button class="password-toggle" type="button" aria-label="パスワードを表示" aria-pressed="false" onclick="togglePasswordVisibility('cloudNewPassword', this)">◉</button>
+        </div>
         <button class="btn-secondary" onclick="setCloudPassword()">パスワード設定</button>
         <button class="btn-secondary" onclick="syncCloudNow()">今すぐ同期</button>
         <button class="btn-secondary" onclick="logoutCloud()">ログアウト</button>
@@ -845,6 +857,17 @@ function updateCloudUi(cloudState) {
   else if (cloudState.syncing) status.textContent='クラウドと同期中…';
   else if (cloudState.signedIn) status.textContent='クラウド同期が有効です';
   else status.textContent='この端末だけに保存中';
+}
+
+function togglePasswordVisibility(inputId, button) {
+  const input=document.getElementById(inputId);
+  if (!input) return;
+  const visible=input.type==='text';
+  input.type=visible?'password':'text';
+  button.textContent=visible?'◉':'◎';
+  button.setAttribute('aria-pressed',String(!visible));
+  button.setAttribute('aria-label',visible?'パスワードを表示':'パスワードを隠す');
+  input.focus();
 }
 
 async function loginCloudWithPassword() {
