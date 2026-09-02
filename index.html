@@ -42,6 +42,20 @@
   .cloud-row { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
   .cloud-input { flex:1; min-width:180px; background:var(--bg); color:var(--text); border:1px solid var(--border-light); border-radius:7px; padding:8px 10px; font-family:var(--jp); }
   .cloud-status { margin-top:7px; font-size:11px; color:var(--text-dim); }
+  .cloud-row button { white-space: nowrap; }
+
+  @media (max-width: 600px) {
+    .cloud-bar { padding: 12px; }
+    #cloudSignedOut,
+    #cloudSignedIn { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: center; }
+    #cloudSignedOut .cloud-input,
+    #cloudSignedOut button,
+    #cloudSignedIn #cloudAccount,
+    #cloudSignedIn #cloudNewPassword,
+    #cloudSignedIn button:first-of-type { grid-column: 1 / -1; width: 100%; min-width: 0; }
+    #cloudSignedIn button { width: 100%; min-width: 0; }
+    #cloudAccount { overflow-wrap: anywhere; }
+  }
 
   .editor-header { position: sticky; top: 0; z-index: 100; background: rgba(20,20,20,0.96); backdrop-filter: blur(8px); border-bottom: 1px solid var(--border); padding: 10px 16px; display: flex; align-items: center; gap: 10px; }
   .btn-back { background: transparent; border: none; color: var(--text-mid); font-size: 20px; cursor: pointer; padding: 2px 4px; flex-shrink: 0; }
@@ -823,8 +837,8 @@ function updateCloudUi(cloudState) {
   const signedIn=document.getElementById('cloudSignedIn');
   const signedOut=document.getElementById('cloudSignedOut');
   if (!signedIn || !signedOut) return;
-  signedIn.style.display=cloudState.signedIn?'flex':'none';
-  signedOut.style.display=cloudState.signedIn?'none':'flex';
+  signedIn.style.display=cloudState.signedIn?'':'none';
+  signedOut.style.display=cloudState.signedIn?'none':'';
   document.getElementById('cloudAccount').textContent=cloudState.email||'ログイン済み';
   const status=document.getElementById('cloudStatus');
   if (cloudState.error) status.textContent=`⚠ ${cloudState.error}`;
