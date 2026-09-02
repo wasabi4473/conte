@@ -67,6 +67,17 @@
   .point-image img { width:100%; height:100%; object-fit:contain; }
   .point-action { margin-top:9px; min-height:34px; color:var(--text); font-size:12px; line-height:1.45; white-space:pre-wrap; }
   .point-actions { display:flex; justify-content:flex-end; gap:4px; margin-top:8px; }
+  .flow-block { margin:12px 0; border:1px solid var(--border); border-radius:12px; background:var(--surface); overflow:hidden; }
+  .flow-header { display:flex; align-items:center; gap:8px; padding:10px 12px; border-bottom:1px solid var(--border); }
+  .flow-title { flex:1; min-width:0; font-size:12px; font-weight:700; color:var(--accent); }
+  .flow-strip { display:flex; align-items:stretch; overflow:auto; background:#111; scroll-snap-type:x proximity; }
+  .flow-strip.vertical { flex-direction:column; overflow:visible; }
+  .flow-panel { position:relative; flex:0 0 260px; min-height:160px; background:#fff; scroll-snap-align:start; cursor:pointer; overflow:hidden; }
+  .flow-strip.vertical .flow-panel { flex-basis:auto; min-height:190px; }
+  .flow-panel img { display:block; width:100%; height:100%; min-height:160px; object-fit:cover; }
+  .flow-panel-empty { min-height:160px; display:flex; align-items:center; justify-content:center; color:#aaa; font-size:11px; }
+  .flow-marker { position:absolute; top:7px; left:7px; padding:3px 6px; border-radius:4px; background:rgba(20,20,20,.78); color:var(--accent); font:700 10px var(--mono); }
+  .flow-caption { position:absolute; left:0; right:0; bottom:0; padding:18px 8px 7px; background:linear-gradient(transparent,rgba(0,0,0,.78)); color:#fff; font-size:11px; }
 
   @media (max-width: 600px) {
     .cloud-bar { padding: 12px; }
@@ -493,16 +504,9 @@
           <button class="btn-add-seq" onclick="openAddSeq()">📁 シーケンス追加</button>
         </div>
       </div>
-      <div class="continuous-toolbar" id="continuousToolbar">
-        <div style="font-size:11px;color:var(--text-dim);">進行方向</div>
-        <div class="direction-selector">
-          <button class="direction-btn" data-direction="horizontal" onclick="setFlowDirection('horizontal')">→ 横</button>
-          <button class="direction-btn" data-direction="vertical" onclick="setFlowDirection('vertical')">↓ 縦</button>
-          <button class="direction-btn" data-direction="free" onclick="setFlowDirection('free')">⌘ 自由</button>
-        </div>
-      </div>
       <div class="top-cuts" id="topCuts"></div>
       <button class="btn-add-cut" id="addTopCutButton" onclick="openAddCutTopLevel()">＋ カットを追加</button>
+      <button class="btn-add-cut" onclick="openAddContinuousBlock()">＋ 長回し／スクロールを追加</button>
       <div id="seqList"></div>
     </div>
 
@@ -726,13 +730,25 @@
     <div class="dlg-title">企画名をつけよう</div>
     <div class="dlg-msg">あとから変更できます</div>
     <input class="dlg-input" id="dlgProjectTitle" type="text" placeholder="例：春MVの企画、〇〇寸劇" maxlength="60" onkeydown="if(event.key==='Enter') doCreateProject()">
-    <div class="format-options">
-      <button class="format-option selected" type="button" data-mode="cut" onclick="selectNewProjectMode('cut')"><strong>🎬 通常CUT</strong><span>これまで通り、独立したカットを順番に作成</span></button>
-      <button class="format-option" type="button" data-mode="continuous" onclick="selectNewProjectMode('continuous')"><strong>↔ 連続コンテ</strong><span>長回し・横スクロール・縦スクロール用</span></button>
-    </div>
     <div class="dlg-actions">
       <button class="btn-secondary" onclick="closeDlg('dlgNewProject')">キャンセル</button>
       <button class="btn-primary" onclick="doCreateProject()">作成する</button>
+    </div>
+  </div>
+</div>
+
+<div class="dlg-overlay" id="dlgNewContinuous">
+  <div class="dlg-box">
+    <div class="dlg-title">長回し／スクロールを追加</div>
+    <div class="dlg-msg">通常カットの途中に、ひと続きの場面を追加します</div>
+    <input class="dlg-input" id="dlgContinuousTitle" type="text" placeholder="例：街を横断する長回し" maxlength="40">
+    <div class="format-options">
+      <button class="format-option selected" type="button" data-direction="horizontal" onclick="selectContinuousDirection('horizontal')"><strong>→ 横スクロール</strong><span>左右へつながる場面</span></button>
+      <button class="format-option" type="button" data-direction="vertical" onclick="selectContinuousDirection('vertical')"><strong>↓ 縦スクロール</strong><span>上下へつながる場面</span></button>
+    </div>
+    <div class="dlg-actions">
+      <button class="btn-secondary" onclick="closeDlg('dlgNewContinuous')">キャンセル</button>
+      <button class="btn-primary" onclick="doAddContinuousBlock()">追加する</button>
     </div>
   </div>
 </div>
@@ -817,7 +833,7 @@ let currentImageData = null;
 let scriptTargetInputId = null;
 let currentScriptStockLines = []; 
 let pendingScriptRemoveIndices = []; 
-let newProjectMode = 'cut';
+let newContinuousDirection = 'horizontal';
 
 function isVerticalProject() {
   const p = currentProject();
@@ -844,7 +860,14 @@ function framesToTimecode(frames, fps) {
 
 function getAllCuts(p) {
   let ordered = [];
-  if (p.cuts) ordered.push(...p.cuts);
+  const usedCuts=new Set();
+  const usedBlocks=new Set();
+  (p.timelineItems||[]).forEach(item=>{
+    if(item.kind==='cut') { const cut=(p.cuts||[]).find(c=>c.id===item.id); if(cut){ordered.push(cut);usedCuts.add(cut.id);} }
+    if(item.kind==='continuous') { const block=(p.continuousBlocks||[]).find(b=>b.id===item.id); if(block){ordered.push(...block.points);usedBlocks.add(block.id);} }
+  });
+  (p.cuts||[]).forEach(cut=>{if(!usedCuts.has(cut.id)) ordered.push(cut);});
+  (p.continuousBlocks||[]).forEach(block=>{if(!usedBlocks.has(block.id)) ordered.push(...block.points);});
   if (p.sequences) {
     p.sequences.forEach(seq => {
       if (seq.cuts) ordered.push(...seq.cuts);
@@ -1053,7 +1076,7 @@ function updateDurationStatus() {
 function openDlg(id) { document.getElementById(id).classList.add('open'); }
 function closeDlg(id) { document.getElementById(id).classList.remove('open'); }
 
-function countCuts(p) { return (p.cuts||[]).length + (p.sequences||[]).reduce((s,sq)=>s+(sq.cuts||[]).length,0); }
+function countCuts(p) { return (p.cuts||[]).length + (p.continuousBlocks||[]).reduce((s,b)=>s+(b.points||[]).length,0) + (p.sequences||[]).reduce((s,sq)=>s+(sq.cuts||[]).length,0); }
 function isContinuousProject(p=currentProject()) { return !!p && p.conteMode==='continuous'; }
 function renderProjectList() {
   const list = document.getElementById('projectList');
@@ -1064,7 +1087,7 @@ function renderProjectList() {
     return `<div class="project-card" onclick="openProject('${p.id}')">
       <div class="project-card-body">
         <div class="project-card-title">${escHtml(p.title||'無題の企画')}</div>
-        <div class="project-card-meta">${isContinuousProject(p)?'地点':'カット'} ${countCuts(p)} · ${date}</div>
+        <div class="project-card-meta">構成 ${countCuts(p)}コマ · ${date}</div>
       </div>
       ${p.type?`<div class="project-card-type">${escHtml(p.type)}</div>`:''}
       <button class="project-card-del" onclick="event.stopPropagation();confirmDelete('企画を削除しますか？','「${(p.title||'無題').replace(/'/g,"\\'")}」を削除します。この操作は取り消せません。',()=>doDeleteProject('${p.id}'))">🗑</button>
@@ -1117,19 +1140,14 @@ function restoreData(e) {
 
 function createProject() {
   document.getElementById('dlgProjectTitle').value = '';
-  selectNewProjectMode('cut');
   openDlg('dlgNewProject');
   setTimeout(()=>document.getElementById('dlgProjectTitle').focus(),100);
-}
-function selectNewProjectMode(mode) {
-  newProjectMode = mode==='continuous'?'continuous':'cut';
-  document.querySelectorAll('#dlgNewProject .format-option').forEach(el=>el.classList.toggle('selected',el.dataset.mode===newProjectMode));
 }
 function doCreateProject() {
   const title = document.getElementById('dlgProjectTitle').value.trim();
   if (!title) { document.getElementById('dlgProjectTitle').focus(); return; }
   const id = ConteData.makeId('p');
-  projects.push({ id, title, conteMode:newProjectMode, flowDirection:'horizontal', type:'', clientName:'', resolution:'', fps:'', duration:'', deadline:'', script:'', outlineEnabled:false, scriptEnabled:false, cuts:[], sequences:[], updatedAt:Date.now() });
+  projects.push({ id, title, conteMode:'cut', type:'', clientName:'', resolution:'', fps:'', duration:'', deadline:'', script:'', outlineEnabled:false, scriptEnabled:false, cuts:[], continuousBlocks:[], timelineItems:[], sequences:[], updatedAt:Date.now() });
   saveProjects(); closeDlg('dlgNewProject'); openProject(id);
 }
 function doDeleteProject(id) {
@@ -1253,8 +1271,42 @@ function moveSeq(seqId, dir) {
 
 function getCutArray(p, loc) {
   if (loc === 'top') return p.cuts;
+  if (loc.startsWith('continuous:')) {
+    const block=p.continuousBlocks.find(b=>b.id===loc.slice(11));
+    return block ? block.points : null;
+  }
   const seq = p.sequences.find(s=>s.id===loc);
   return seq ? seq.cuts : null;
+}
+
+function openAddContinuousBlock() {
+  document.getElementById('dlgContinuousTitle').value='';
+  selectContinuousDirection('horizontal');
+  openDlg('dlgNewContinuous');
+}
+function selectContinuousDirection(direction) {
+  newContinuousDirection=direction==='vertical'?'vertical':'horizontal';
+  document.querySelectorAll('#dlgNewContinuous .format-option').forEach(el=>el.classList.toggle('selected',el.dataset.direction===newContinuousDirection));
+}
+function doAddContinuousBlock() {
+  const p=currentProject(); if(!p) return;
+  const block={id:ConteData.makeId('b'),title:document.getElementById('dlgContinuousTitle').value.trim()||'長回し',direction:newContinuousDirection,points:[]};
+  p.continuousBlocks.push(block);
+  p.timelineItems.push({kind:'continuous',id:block.id});
+  saveProjects(); closeDlg('dlgNewContinuous'); renderCuts(); updateMeta(); showToast('長回しブロックを追加しました');
+}
+function deleteContinuousBlock(blockId) {
+  const p=currentProject(); if(!p) return;
+  p.continuousBlocks=p.continuousBlocks.filter(b=>b.id!==blockId);
+  p.timelineItems=p.timelineItems.filter(item=>!(item.kind==='continuous'&&item.id===blockId));
+  saveProjects(); calcDurations(); renderCuts(); updateMeta(); showToast('長回しブロックを削除しました');
+}
+function moveTimelineItem(kind,id,dir) {
+  const p=currentProject(); if(!p) return;
+  const idx=p.timelineItems.findIndex(item=>item.kind===kind&&item.id===id);
+  const ni=idx+dir; if(idx<0||ni<0||ni>=p.timelineItems.length) return;
+  [p.timelineItems[idx],p.timelineItems[ni]]=[p.timelineItems[ni],p.timelineItems[idx]];
+  saveProjects(); calcDurations(); renderCuts();
 }
 
 function openAddCutTopLevel() { openAddCut('top'); }
@@ -1262,7 +1314,7 @@ function openAddCut(loc) {
   editingCutLocation = loc; editingCutId = null;
   selectedCams = new Set(); selectedAngle = ''; currentImageData = null;
   pendingScriptRemoveIndices = [];
-  document.getElementById('cutModalTitle').textContent = isContinuousProject()?'地点を追加':'カットを追加';
+  document.getElementById('cutModalTitle').textContent = loc.startsWith('continuous:')?'地点を追加':'カットを追加';
   ['m_timecode','m_camera','m_a_narration','m_a_dialogue','m_a_lyrics','m_a_bgm','m_a_se','m_a_sl','m_action','m_note'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('m_durMin').value = '0';
   document.getElementById('m_durSec').value = '0';
@@ -1280,7 +1332,7 @@ function openEditCut(loc, cutId) {
   selectedCams = new Set(cut.cams||[]); selectedAngle = cut.angle||''; currentImageData = cut.image||null;
   pendingScriptRemoveIndices = []; 
   
-  document.getElementById('cutModalTitle').textContent = isContinuousProject()?'地点を編集':'カットを編集';
+  document.getElementById('cutModalTitle').textContent = loc.startsWith('continuous:')?'地点を編集':'カットを編集';
   
   document.getElementById('m_durMin').value = cut.durM || '0';
   document.getElementById('m_durSec').value = cut.durS || '0';
@@ -1353,7 +1405,10 @@ function saveCut() {
   };
   
   if (editingCutId) { const idx=arr.findIndex(c=>c.id===editingCutId); if(idx>=0) arr[idx]=cut; }
-  else arr.push(cut);
+  else {
+    arr.push(cut);
+    if (editingCutLocation==='top') p.timelineItems.push({kind:'cut',id:cut.id});
+  }
   
   if (pendingScriptRemoveIndices.length > 0) {
     const uniqueIndices = [...new Set(pendingScriptRemoveIndices)].sort((a, b) => b - a);
@@ -1368,17 +1423,19 @@ function saveCut() {
   updateScriptStatsIfNeeded();
   updateDurationStatus();
   updateMeta();
-  showToast(editingCutId?'更新しました':(isContinuousProject()?'地点を追加しました':'カットを追加しました'));
+  showToast(editingCutId?'更新しました':(editingCutLocation.startsWith('continuous:')?'地点を追加しました':'カットを追加しました'));
 }
 
 function deleteCut(loc, cutId) {
   const p = currentProject(); if (!p) return;
   const arr = getCutArray(p, loc); if (!arr) return;
   const idx = arr.findIndex(c=>c.id===cutId); if (idx>=0) arr.splice(idx,1);
+  if (loc==='top') p.timelineItems=p.timelineItems.filter(item=>!(item.kind==='cut'&&item.id===cutId));
   saveProjects(); calcDurations(); renderCuts(); updateScriptStatsIfNeeded(); updateDurationStatus(); updateMeta(); showToast('削除しました');
 }
 function moveCut(loc, cutId, dir) {
   const p = currentProject(); if (!p) return;
+  if (loc==='top') { moveTimelineItem('cut',cutId,dir); return; }
   const arr = getCutArray(p, loc); if (!arr) return;
   const idx = arr.findIndex(c=>c.id===cutId); if (idx<0) return;
   const ni = idx+dir; if (ni<0||ni>=arr.length) return;
@@ -1616,7 +1673,7 @@ function renderCutCard(cut, ci, loc) {
   if (cut.timecode) chips.push(cut.timecode);
   if (cut.cams&&cut.cams.length) chips.push(cut.cams[0].split('（')[0]);
   if (cut.angle) chips.push(cut.angle.split('（')[0]);
-  const arr = (loc==='top') ? currentProject().cuts : currentProject().sequences.find(s=>s.id===loc).cuts;
+  const arr = getCutArray(currentProject(),loc)||[];
   
   let audioSummary = '';
   if(cut.audio) {
@@ -1678,19 +1735,18 @@ function renderCutCard(cut, ci, loc) {
 
 function renderCuts() {
   const p = currentProject(); if (!p) return;
-  const continuous=isContinuousProject(p);
-  document.getElementById('cutsCount').textContent = `${countCuts(p)} ${continuous?'地点':'カット'}`;
-  document.getElementById('sequenceControls').style.display=continuous?'none':'';
-  document.getElementById('continuousToolbar').classList.toggle('show',continuous);
-  document.getElementById('addTopCutButton').textContent=continuous?'＋ 地点を追加':'＋ カットを追加';
-  document.querySelectorAll('.direction-btn').forEach(el=>el.classList.toggle('selected',el.dataset.direction===(p.flowDirection||'horizontal')));
-  if (continuous) {
-    const points=p.cuts||[];
-    document.getElementById('topCuts').innerHTML=`<div class="continuous-canvas ${p.flowDirection||'horizontal'}">${points.map((point,i)=>renderContinuousPoint(point,i,points.length)).join('')}</div>`;
-    document.getElementById('seqList').innerHTML='';
-    return;
-  }
-  document.getElementById('topCuts').innerHTML = (p.cuts||[]).map((cut,ci)=>renderCutCard(cut,ci,'top')).join('');
+  document.getElementById('cutsCount').textContent = `${countCuts(p)} コマ`;
+  document.getElementById('sequenceControls').style.display='';
+  document.getElementById('addTopCutButton').textContent='＋ カットを追加';
+  let cutNumber=0;
+  document.getElementById('topCuts').innerHTML=(p.timelineItems||[]).map((item,itemIndex)=>{
+    if(item.kind==='cut') {
+      const cut=p.cuts.find(c=>c.id===item.id); if(!cut) return '';
+      return renderCutCard(cut,cutNumber++,'top');
+    }
+    const block=p.continuousBlocks.find(b=>b.id===item.id); if(!block) return '';
+    return renderFlowBlock(block,itemIndex,p.timelineItems.length);
+  }).join('');
 
   const list = document.getElementById('seqList');
   list.innerHTML = (p.sequences||[]).map((seq, si) => {
@@ -1732,6 +1788,7 @@ function changePreviewZoom(val) {
 function findCutById(cutId) {
   const p = currentProject(); if(!p) return null;
   let cut = p.cuts.find(c=>c.id===cutId); if(cut) return cut;
+  for(let b of p.continuousBlocks) { cut=b.points.find(c=>c.id===cutId); if(cut) return cut; }
   for(let s of p.sequences) { cut = s.cuts.find(c=>c.id===cutId); if(cut) return cut; }
   return null;
 }
@@ -2083,13 +2140,36 @@ function updateMeta() {
   const p = currentProject(); if (!p) return;
   const saveLabel = lastSaveError ? '⚠ 保存できていません' : '自動保存済み';
   const meta = document.getElementById('projectMeta');
-  meta.textContent = `${isContinuousProject(p)?'地点':'カット'} ${countCuts(p)} · ${saveLabel}`;
+  meta.textContent = `構成 ${countCuts(p)}コマ · ${saveLabel}`;
   meta.style.color = lastSaveError ? 'var(--red)' : '';
+}
+
+function renderFlowBlock(block,itemIndex,totalItems) {
+  const loc=`continuous:${block.id}`;
+  const panels=(block.points||[]).map((point,index)=>{
+    const time=point.timecode||framesToTimecode(point._accumFrames||0,getFps());
+    const caption=point.action||point.cameraNote||'';
+    return `<div class="flow-panel" onclick="openEditCut('${loc}','${point.id}')">
+      ${point.image?`<img src="${point.image}" alt="連続コンテ地点">`:'<div class="flow-panel-empty">タップして絵やメモを編集</div>'}
+      <div class="flow-marker">${escHtml(time)}</div>
+      ${caption?`<div class="flow-caption">${escHtml(caption)}</div>`:''}
+    </div>`;
+  }).join('');
+  return `<section class="flow-block">
+    <div class="flow-header">
+      <div class="flow-title">${block.direction==='vertical'?'↓':'→'} ${escHtml(block.title||'長回し')}</div>
+      <button class="btn-sm" onclick="moveTimelineItem('continuous','${block.id}',-1)" ${itemIndex===0?'disabled style="opacity:.3"':''}>↑</button>
+      <button class="btn-sm" onclick="moveTimelineItem('continuous','${block.id}',1)" ${itemIndex===totalItems-1?'disabled style="opacity:.3"':''}>↓</button>
+      <button class="btn-sm danger" onclick="confirmDelete('長回しを削除しますか？','中の地点もすべて削除されます。',()=>deleteContinuousBlock('${block.id}'))">🗑</button>
+    </div>
+    <div class="flow-strip ${block.direction}">${panels||'<div class="flow-panel-empty" style="width:100%">地点を追加すると、絵が隙間なくつながります</div>'}</div>
+    <button class="btn-add-cut" style="margin:8px;width:calc(100% - 16px)" onclick="openAddCut('${loc}')">＋ 地点を追加</button>
+  </section>`;
 }
 function escHtml(str) { return (str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function showToast(msg) { const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500); }
 
-['cutModal','dlgNewProject','dlgNewSeq','dlgConfirm','dlgMoveCut','dlgSelectScript', 'dlgData'].forEach(id=>{
+['cutModal','dlgNewProject','dlgNewContinuous','dlgNewSeq','dlgConfirm','dlgMoveCut','dlgSelectScript', 'dlgData'].forEach(id=>{
   document.getElementById(id).addEventListener('click',e=>{if(e.target===document.getElementById(id)) closeDlg(id);});
 });
 document.getElementById('cutModal').addEventListener('click',e=>{if(e.target===document.getElementById('cutModal')) closeCutModal();});
