@@ -47,6 +47,26 @@
   .password-toggle:hover { color:var(--text); background:var(--card-hover); }
   .cloud-status { margin-top:7px; font-size:11px; color:var(--text-dim); }
   .cloud-row button { white-space: nowrap; }
+  .format-options { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:14px 0; }
+  .format-option { border:1px solid var(--border); border-radius:10px; padding:12px; color:var(--text-mid); background:var(--bg); cursor:pointer; text-align:left; font-family:var(--jp); }
+  .format-option.selected { border-color:var(--accent); color:var(--accent); background:var(--accent-dim); }
+  .format-option strong { display:block; font-size:13px; margin-bottom:4px; }
+  .format-option span { display:block; font-size:10px; line-height:1.5; }
+  .continuous-toolbar { display:none; align-items:center; justify-content:space-between; gap:10px; margin-bottom:12px; padding:10px; background:var(--surface); border:1px solid var(--border); border-radius:9px; }
+  .continuous-toolbar.show { display:flex; }
+  .direction-selector { display:flex; gap:5px; flex-wrap:wrap; }
+  .direction-btn { border:1px solid var(--border); background:var(--bg); color:var(--text-mid); border-radius:20px; padding:6px 10px; cursor:pointer; font:11px var(--jp); }
+  .direction-btn.selected { color:var(--accent); border-color:var(--accent); background:var(--accent-dim); }
+  .continuous-canvas { display:flex; gap:12px; overflow:auto; padding:4px 2px 14px; scroll-snap-type:x proximity; }
+  .continuous-canvas.vertical { flex-direction:column; overflow:visible; }
+  .continuous-canvas.free { display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); overflow:visible; }
+  .continuous-point { position:relative; flex:0 0 230px; min-height:205px; padding:12px; border:1px solid var(--border); border-radius:12px; background:var(--card); scroll-snap-align:start; }
+  .continuous-canvas.vertical .continuous-point { flex-basis:auto; min-height:0; }
+  .point-time { color:var(--accent); font:700 12px var(--mono); margin-bottom:8px; }
+  .point-image { height:108px; border-radius:7px; background:#fff; overflow:hidden; display:flex; align-items:center; justify-content:center; color:#bbb; font-size:11px; }
+  .point-image img { width:100%; height:100%; object-fit:contain; }
+  .point-action { margin-top:9px; min-height:34px; color:var(--text); font-size:12px; line-height:1.45; white-space:pre-wrap; }
+  .point-actions { display:flex; justify-content:flex-end; gap:4px; margin-top:8px; }
 
   @media (max-width: 600px) {
     .cloud-bar { padding: 12px; }
@@ -61,6 +81,10 @@
     #cloudSignedIn > button:first-of-type { grid-column: 1 / -1; width: 100%; min-width: 0; }
     #cloudSignedIn > button { width: 100%; min-width: 0; }
     #cloudAccount { overflow-wrap: anywhere; }
+    .format-options { grid-template-columns:1fr; }
+    .continuous-toolbar { align-items:flex-start; flex-direction:column; }
+    .continuous-canvas { margin-right:-16px; padding-right:16px; }
+    .continuous-point { flex-basis:82vw; max-width:300px; }
   }
 
   .editor-header { position: sticky; top: 0; z-index: 100; background: rgba(20,20,20,0.96); backdrop-filter: blur(8px); border-bottom: 1px solid var(--border); padding: 10px 16px; display: flex; align-items: center; gap: 10px; }
@@ -465,12 +489,20 @@
     <div class="tab-panel" id="tab-cuts">
       <div class="cuts-panel-header">
         <div class="cuts-count" id="cutsCount">0 カット</div>
-        <div class="header-btns">
+        <div class="header-btns" id="sequenceControls">
           <button class="btn-add-seq" onclick="openAddSeq()">📁 シーケンス追加</button>
         </div>
       </div>
+      <div class="continuous-toolbar" id="continuousToolbar">
+        <div style="font-size:11px;color:var(--text-dim);">進行方向</div>
+        <div class="direction-selector">
+          <button class="direction-btn" data-direction="horizontal" onclick="setFlowDirection('horizontal')">→ 横</button>
+          <button class="direction-btn" data-direction="vertical" onclick="setFlowDirection('vertical')">↓ 縦</button>
+          <button class="direction-btn" data-direction="free" onclick="setFlowDirection('free')">⌘ 自由</button>
+        </div>
+      </div>
       <div class="top-cuts" id="topCuts"></div>
-      <button class="btn-add-cut" onclick="openAddCutTopLevel()">＋ カットを追加</button>
+      <button class="btn-add-cut" id="addTopCutButton" onclick="openAddCutTopLevel()">＋ カットを追加</button>
       <div id="seqList"></div>
     </div>
 
@@ -694,6 +726,10 @@
     <div class="dlg-title">企画名をつけよう</div>
     <div class="dlg-msg">あとから変更できます</div>
     <input class="dlg-input" id="dlgProjectTitle" type="text" placeholder="例：春MVの企画、〇〇寸劇" maxlength="60" onkeydown="if(event.key==='Enter') doCreateProject()">
+    <div class="format-options">
+      <button class="format-option selected" type="button" data-mode="cut" onclick="selectNewProjectMode('cut')"><strong>🎬 通常CUT</strong><span>これまで通り、独立したカットを順番に作成</span></button>
+      <button class="format-option" type="button" data-mode="continuous" onclick="selectNewProjectMode('continuous')"><strong>↔ 連続コンテ</strong><span>長回し・横スクロール・縦スクロール用</span></button>
+    </div>
     <div class="dlg-actions">
       <button class="btn-secondary" onclick="closeDlg('dlgNewProject')">キャンセル</button>
       <button class="btn-primary" onclick="doCreateProject()">作成する</button>
@@ -781,6 +817,7 @@ let currentImageData = null;
 let scriptTargetInputId = null;
 let currentScriptStockLines = []; 
 let pendingScriptRemoveIndices = []; 
+let newProjectMode = 'cut';
 
 function isVerticalProject() {
   const p = currentProject();
@@ -1017,6 +1054,7 @@ function openDlg(id) { document.getElementById(id).classList.add('open'); }
 function closeDlg(id) { document.getElementById(id).classList.remove('open'); }
 
 function countCuts(p) { return (p.cuts||[]).length + (p.sequences||[]).reduce((s,sq)=>s+(sq.cuts||[]).length,0); }
+function isContinuousProject(p=currentProject()) { return !!p && p.conteMode==='continuous'; }
 function renderProjectList() {
   const list = document.getElementById('projectList');
   const empty = document.getElementById('listEmpty');
@@ -1026,7 +1064,7 @@ function renderProjectList() {
     return `<div class="project-card" onclick="openProject('${p.id}')">
       <div class="project-card-body">
         <div class="project-card-title">${escHtml(p.title||'無題の企画')}</div>
-        <div class="project-card-meta">カット ${countCuts(p)} · ${date}</div>
+        <div class="project-card-meta">${isContinuousProject(p)?'地点':'カット'} ${countCuts(p)} · ${date}</div>
       </div>
       ${p.type?`<div class="project-card-type">${escHtml(p.type)}</div>`:''}
       <button class="project-card-del" onclick="event.stopPropagation();confirmDelete('企画を削除しますか？','「${(p.title||'無題').replace(/'/g,"\\'")}」を削除します。この操作は取り消せません。',()=>doDeleteProject('${p.id}'))">🗑</button>
@@ -1079,14 +1117,19 @@ function restoreData(e) {
 
 function createProject() {
   document.getElementById('dlgProjectTitle').value = '';
+  selectNewProjectMode('cut');
   openDlg('dlgNewProject');
   setTimeout(()=>document.getElementById('dlgProjectTitle').focus(),100);
+}
+function selectNewProjectMode(mode) {
+  newProjectMode = mode==='continuous'?'continuous':'cut';
+  document.querySelectorAll('#dlgNewProject .format-option').forEach(el=>el.classList.toggle('selected',el.dataset.mode===newProjectMode));
 }
 function doCreateProject() {
   const title = document.getElementById('dlgProjectTitle').value.trim();
   if (!title) { document.getElementById('dlgProjectTitle').focus(); return; }
   const id = ConteData.makeId('p');
-  projects.push({ id, title, type:'', clientName:'', resolution:'', fps:'', duration:'', deadline:'', script:'', outlineEnabled:false, scriptEnabled:false, cuts:[], sequences:[], updatedAt:Date.now() });
+  projects.push({ id, title, conteMode:newProjectMode, flowDirection:'horizontal', type:'', clientName:'', resolution:'', fps:'', duration:'', deadline:'', script:'', outlineEnabled:false, scriptEnabled:false, cuts:[], sequences:[], updatedAt:Date.now() });
   saveProjects(); closeDlg('dlgNewProject'); openProject(id);
 }
 function doDeleteProject(id) {
@@ -1219,7 +1262,7 @@ function openAddCut(loc) {
   editingCutLocation = loc; editingCutId = null;
   selectedCams = new Set(); selectedAngle = ''; currentImageData = null;
   pendingScriptRemoveIndices = [];
-  document.getElementById('cutModalTitle').textContent = 'カットを追加';
+  document.getElementById('cutModalTitle').textContent = isContinuousProject()?'地点を追加':'カットを追加';
   ['m_timecode','m_camera','m_a_narration','m_a_dialogue','m_a_lyrics','m_a_bgm','m_a_se','m_a_sl','m_action','m_note'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('m_durMin').value = '0';
   document.getElementById('m_durSec').value = '0';
@@ -1237,7 +1280,7 @@ function openEditCut(loc, cutId) {
   selectedCams = new Set(cut.cams||[]); selectedAngle = cut.angle||''; currentImageData = cut.image||null;
   pendingScriptRemoveIndices = []; 
   
-  document.getElementById('cutModalTitle').textContent = 'カットを編集';
+  document.getElementById('cutModalTitle').textContent = isContinuousProject()?'地点を編集':'カットを編集';
   
   document.getElementById('m_durMin').value = cut.durM || '0';
   document.getElementById('m_durSec').value = cut.durS || '0';
@@ -1325,7 +1368,7 @@ function saveCut() {
   updateScriptStatsIfNeeded();
   updateDurationStatus();
   updateMeta();
-  showToast(editingCutId?'更新しました':'カットを追加しました');
+  showToast(editingCutId?'更新しました':(isContinuousProject()?'地点を追加しました':'カットを追加しました'));
 }
 
 function deleteCut(loc, cutId) {
@@ -1546,6 +1589,28 @@ function saveDraw() {
 }
 
 // ===== RENDER CUTS =====
+function setFlowDirection(direction) {
+  const p=currentProject(); if(!p || !['horizontal','vertical','free'].includes(direction)) return;
+  p.flowDirection=direction; saveProjects(); renderCuts();
+}
+
+function renderContinuousPoint(point, index, total) {
+  const fps=getFps();
+  const time=point.timecode || framesToTimecode(point._accumFrames||0,fps);
+  const summary=point.action || point.cameraNote || point.note || '内容を入力してください';
+  return `<article class="continuous-point">
+    <div class="point-time">POINT ${String(index+1).padStart(2,'0')} · ${escHtml(time)}</div>
+    <div class="point-image">${point.image?`<img src="${point.image}" alt="地点のコンテ絵">`:'No Image'}</div>
+    <div class="point-action">${escHtml(summary)}</div>
+    <div class="point-actions">
+      <button class="btn-sm" onclick="moveCut('top','${point.id}',-1)" ${index===0?'disabled style="opacity:.3"':''}>←</button>
+      <button class="btn-sm" onclick="moveCut('top','${point.id}',1)" ${index===total-1?'disabled style="opacity:.3"':''}>→</button>
+      <button class="btn-sm" onclick="openEditCut('top','${point.id}')">✏️</button>
+      <button class="btn-sm danger" onclick="confirmDelete('地点を削除しますか？','POINT ${String(index+1).padStart(2,'0')} を削除します。',()=>deleteCut('top','${point.id}'))">🗑</button>
+    </div>
+  </article>`;
+}
+
 function renderCutCard(cut, ci, loc) {
   const chips = [];
   if (cut.timecode) chips.push(cut.timecode);
@@ -1613,7 +1678,18 @@ function renderCutCard(cut, ci, loc) {
 
 function renderCuts() {
   const p = currentProject(); if (!p) return;
-  document.getElementById('cutsCount').textContent = `${countCuts(p)} カット`;
+  const continuous=isContinuousProject(p);
+  document.getElementById('cutsCount').textContent = `${countCuts(p)} ${continuous?'地点':'カット'}`;
+  document.getElementById('sequenceControls').style.display=continuous?'none':'';
+  document.getElementById('continuousToolbar').classList.toggle('show',continuous);
+  document.getElementById('addTopCutButton').textContent=continuous?'＋ 地点を追加':'＋ カットを追加';
+  document.querySelectorAll('.direction-btn').forEach(el=>el.classList.toggle('selected',el.dataset.direction===(p.flowDirection||'horizontal')));
+  if (continuous) {
+    const points=p.cuts||[];
+    document.getElementById('topCuts').innerHTML=`<div class="continuous-canvas ${p.flowDirection||'horizontal'}">${points.map((point,i)=>renderContinuousPoint(point,i,points.length)).join('')}</div>`;
+    document.getElementById('seqList').innerHTML='';
+    return;
+  }
   document.getElementById('topCuts').innerHTML = (p.cuts||[]).map((cut,ci)=>renderCutCard(cut,ci,'top')).join('');
 
   const list = document.getElementById('seqList');
@@ -2007,7 +2083,7 @@ function updateMeta() {
   const p = currentProject(); if (!p) return;
   const saveLabel = lastSaveError ? '⚠ 保存できていません' : '自動保存済み';
   const meta = document.getElementById('projectMeta');
-  meta.textContent = `カット ${countCuts(p)} · ${saveLabel}`;
+  meta.textContent = `${isContinuousProject(p)?'地点':'カット'} ${countCuts(p)} · ${saveLabel}`;
   meta.style.color = lastSaveError ? 'var(--red)' : '';
 }
 function escHtml(str) { return (str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
