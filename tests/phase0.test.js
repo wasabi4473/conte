@@ -12,10 +12,14 @@ assert.deepEqual(migrated[0].sequences,[]);
 assert.equal(migrated[0].cuts[0].audio.dialogue,'台詞');
 assert.equal(migrated[0].conteMode,'cut');
 assert.equal(migrated[0].flowDirection,'horizontal');
+assert.deepEqual(migrated[0].timelineItems,[{kind:'cut',id:'c_1'}]);
 
-const continuous=ConteData.migrateProjects([{id:'p_2',title:'長回し',conteMode:'continuous',flowDirection:'vertical',cuts:[]}]);
-assert.equal(continuous[0].conteMode,'continuous');
-assert.equal(continuous[0].flowDirection,'vertical');
+const continuous=data.migrateProjects([{id:'p_2',title:'長回し',conteMode:'continuous',flowDirection:'vertical',cuts:[{id:'c_2'}]}]);
+assert.equal(continuous[0].conteMode,'cut');
+assert.equal(continuous[0].cuts.length,0);
+assert.equal(continuous[0].continuousBlocks[0].direction,'vertical');
+assert.equal(continuous[0].continuousBlocks[0].points[0].id,'c_2');
+assert.equal(continuous[0].timelineItems[0].kind,'continuous');
 const memory=fakeStorage();
 const adapter=storageModule.createLocalStorageAdapter(memory);
 assert.equal(adapter.save(migrated).ok,true);
